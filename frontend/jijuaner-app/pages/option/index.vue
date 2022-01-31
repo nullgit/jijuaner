@@ -1,37 +1,63 @@
 <template>
-    <div>
-        <div v-if="loading">加载中</div>
-        <div v-else-if="!isSignIn" class="notSignIn">您尚未登录！</div>
-        <div v-else-if="userOptions.length == 0" class="optionDisabled">
-            您尚未开通基金自选服务！
-            <el-button type="primary" @click="enableOption">开通基金自选服务</el-button>
-        </div>
-        <div v-else class="optionWrapper">
-            <el-tabs type="border-card" v-model="activeGroupId" @tab-click="handleClickGroup">
-                <el-tab-pane
+    <div class="option-wrapper">
+        <van-tabs class="top-tabs" type="card">
+            <van-tab title="自选基金"></van-tab>
+            <van-tab title="自选股票"></van-tab>
+        </van-tabs>
+
+        <el-card class="option">
+            <div v-if="loading">加载中</div>
+            <div v-else-if="!isSignIn">您尚未登录！</div>
+            <div v-else-if="userOptions.length == 0">
+                您尚未开通基金自选服务！
+                <el-button type="primary" @click="enableOption">开通基金自选服务</el-button>
+            </div>
+
+            <van-tabs v-else class="option-group" v-model="activeGroupId" @click="handleClickGroup">
+                <van-tab
                     v-for="group of userOptions"
                     :key="group.groupId"
-                    :label="group.groupName"
+                    :title="group.groupName"
                     :name="group.groupId.toString()"
-                >
-                </el-tab-pane>
-                <nuxt-link to="/search" v-if="activeGroupId == userOptions[0].groupId">添加自选基金</nuxt-link>
-                <el-button v-else @click="addFundDrawer = true">从“全部”分组中添加基金</el-button>
-                <el-button @click="fundDrawer = true" type="text"> 管理自选基金 </el-button>
-                <el-button @click="groupDrawer = true" type="primary"> 自选分组管理 </el-button>
+                ></van-tab>
 
-                <el-drawer
-                    class="manageOption"
-                    title="自选分组管理"
-                    :visible.sync="groupDrawer"
-                    direction="btt"
-                    :size="'70%'"
-                >
-                    <!-- :before-close="handleClose" -->
-                    <el-button type="text" @click="addNewGroup">添加分组</el-button>
+                <div class="buttons">
+                    <nuxt-link to="/search" v-if="activeGroupId == userOptions[0].groupId">
+                        <el-button type="text">添加自选基金</el-button>
+                    </nuxt-link>
+                    <el-button v-else @click="addFundDrawer = true" type="text">从“全部”中添加</el-button>
+                    <el-button @click="fundDrawer = true" type="text"> 管理自选基金 </el-button>
+
+                    <van-button
+                        class="option-group-manage-btn"
+                        color="linear-gradient(to right, #ff6034, #ee0a24)"
+                        @click="groupDrawer = true"
+                    >
+                        自选分组管理
+                    </van-button>
+                </div>
+
+                <van-action-sheet v-model="groupDrawer" title="自选分组管理">
+                    <el-button type="text" @click="addNewGroupDialog = true">添加分组</el-button>
+
+                    <van-dialog
+                        v-model="addNewGroupDialog"
+                        title="请输入分组名称"
+                        show-cancel-button
+                        :beforeClose="addNewGroup"
+                    >
+                        <van-field
+                            v-model="addNewGroupInput"
+                            autosize
+                            label="分组名称"
+                            type="textarea"
+                            placeholder="最多6个字符"
+                        />
+                    </van-dialog>
+
                     <el-table :data="userOptions" style="width: 100%">
                         <!-- 删除分组 -->
-                        <el-table-column label="" width="100">
+                        <el-table-column label="" width="50">
                             <template slot-scope="scope">
                                 <el-button
                                     v-if="scope.$index != 0"
@@ -43,8 +69,8 @@
                                 ></el-button>
                             </template>
                         </el-table-column>
-                        <el-table-column prop="groupName" label="分组名称"></el-table-column>
-                        <el-table-column label="编辑组名">
+                        <el-table-column prop="groupName" label="分组名称" width="120"></el-table-column>
+                        <el-table-column label="编辑组名" width="80">
                             <template slot-scope="scope">
                                 <el-button
                                     icon="el-icon-edit"
@@ -54,11 +80,8 @@
                                 ></el-button>
                             </template>
                         </el-table-column>
-                        <!-- <el-table-column label="编辑组内基金">
-                            <el-button type="primary" icon="el-icon-edit" circle @click="fundDrawer = true"></el-button>
-                        </el-table-column> -->
                         <!-- 上移分组 -->
-                        <el-table-column label="">
+                        <el-table-column label="" width="50">
                             <template slot-scope="scope">
                                 <el-button
                                     v-if="scope.$index > 1"
@@ -70,7 +93,7 @@
                             </template>
                         </el-table-column>
                         <!-- 下移分组 -->
-                        <el-table-column label="">
+                        <el-table-column label="" width="50">
                             <template slot-scope="scope">
                                 <el-button
                                     v-if="scope.$index != userOptions.length - 1 && scope.$index != 0"
@@ -82,22 +105,12 @@
                             </template>
                         </el-table-column>
                     </el-table>
-                </el-drawer>
+                </van-action-sheet>
 
-                <el-drawer
-                    class="manageFundDrawer"
-                    title="管理自选基金"
-                    :visible.sync="fundDrawer"
-                    direction="btt"
-                    :size="'100%'"
-                >
-                    <!-- :before-close="handleClose" -->
-                    <!-- :title="groupIdFundsMap[activeGroupId].groupName" -->
-                    <el-button type="text" @click="addNewGroup">添加基金</el-button>
-                    <el-button type="primary" @click="addNewGroup">保存更改</el-button>
+                <van-action-sheet v-model="fundDrawer" title="管理自选基金">
                     <el-table :data="groupIdFundsMap[activeGroupId]" style="width: 100%">
                         <!-- 删除基金 -->
-                        <el-table-column label="" width="100">
+                        <el-table-column label="" width="80">
                             <template slot-scope="scope">
                                 <el-button
                                     type="danger"
@@ -108,18 +121,12 @@
                                 ></el-button>
                             </template>
                         </el-table-column>
-                        <el-table-column label="基金代码" prop="fundCode"></el-table-column>
+                        <el-table-column label="基金代码" prop="fundCode" width="100"></el-table-column>
                         <el-table-column label="基金名称" prop="fundName"></el-table-column>
                     </el-table>
-                </el-drawer>
+                </van-action-sheet>
 
-                <el-drawer
-                    class="addFundFromAllDrawer"
-                    title="从【全部】分组中添加基金"
-                    :visible.sync="addFundDrawer"
-                    direction="btt"
-                    :size="'100%'"
-                >
+                <van-action-sheet v-model="addFundDrawer" title="从【全部】分组中添加基金">
                     <!-- :title="groupIdFundsMap[activeGroupId].groupName" -->
                     <el-button type="primary" @click="addNewFunds">添加到当前分组</el-button>
                     <el-table
@@ -128,28 +135,32 @@
                         @selection-change="handleSelectFundFromAll"
                         ref="addFundFromAllTable"
                     >
-                    <!-- TODO 退出的时候清除选择的内容 -->
+                        <!-- TODO 退出的时候清除选择的内容 -->
                         <el-table-column type="selection" width="55" :selectable="selectableFormAll"> </el-table-column>
                         <el-table-column label="基金代码" prop="fundCode"></el-table-column>
                         <el-table-column label="基金名称" prop="fundName"></el-table-column>
                     </el-table>
-                </el-drawer>
+                </van-action-sheet>
 
-                <ul class="fundList">
-                    fundList{{
-                        activeGroupId
-                    }}:
-                    <li
-                        v-for="fund of groupIdFundsMap[activeGroupId]"
-                        :key="fund.fundCode"
-                        class="fundItem"
-                    >
-                        <nuxt-link :to="`info/${fund.fundCode}`">{{ fund.fundCode + fund.fundName }}</nuxt-link>
-                    </li>
-                </ul>
-            </el-tabs>
-        </div>
-        <Footer />
+                <el-table
+                    class="fund-list"
+                    :data="groupIdFundsMap[activeGroupId]"
+                    highlight-current-row
+                    @current-change="clickInfo"
+                >
+                    <el-table-column label="基金代码" prop="fundCode" width="100">
+                        <!-- <template slot-scope="scope">
+                            <nuxt-link :to="`info/${scope.row.fundCode}`">
+                                {{ scope.row.fundCode }}
+                            </nuxt-link>
+                        </template> -->
+                    </el-table-column>
+                    <el-table-column label="基金名称" prop="fundName"></el-table-column>
+                </el-table>
+            </van-tabs>
+        </el-card>
+
+        <Footer activeNavProp="自选" />
     </div>
 </template>
 
@@ -158,6 +169,7 @@ import axios from "axios"
 import Vue from "vue"
 import Footer from "../../components/common/Footer.vue"
 import { JiJuanerException } from "../../utils/JiJuanerException"
+import { config } from "../../utils/config"
 
 export default Vue.extend({
     name: "Option",
@@ -176,6 +188,8 @@ export default Vue.extend({
             groupIdFundSetMap: {},
             // { groupId: { xxx: true, xxx: true, ...}, ...}
             groupDrawer: false,
+            addNewGroupDialog: false,
+            addNewGroupInput: "",
             fundDrawer: false,
             addFundDrawer: false,
             selectedFunds: [],
@@ -185,7 +199,7 @@ export default Vue.extend({
         enableOption() {
             axios.get(`/api/user/userOption/enableOption`).then(({ data }) => {
                 if (data.code == 0) {
-                    alert(data.msg)
+                    this.$notify({ type: "success", message: data.msg })
                     this.getGroups()
                 }
             })
@@ -197,7 +211,7 @@ export default Vue.extend({
                 .then(({ data }) => {
                     this.loading = false
                     if (data.code == JiJuanerException.SIGN_IN_EXCEPTION.code) {
-                        alert("请先登录！")
+                        this.$notify({ type: "danger", message: "请先登录！" })
                         return
                     }
                     this.isSignIn = true
@@ -219,7 +233,7 @@ export default Vue.extend({
                 .get(`/api/user/userOption/getFunds?groupId=${this.activeGroupId}`)
                 .then(({ data }) => {
                     if (data.code != 0) {
-                        alert(data.msg)
+                        this.$notify({ type: "danger", message: data.msg })
                         return
                     }
                     let funds = data.data.funds
@@ -239,13 +253,6 @@ export default Vue.extend({
         handleClickGroup() {
             this.getFunds()
         },
-        handleClose(done) {
-            this.$confirm("确认关闭？")
-                .then((_) => {
-                    done()
-                })
-                .catch((_) => {})
-        },
         groupNameValidator(groupName) {
             groupName = groupName.trim()
             if (groupName == null || groupName.length == 0) {
@@ -253,45 +260,51 @@ export default Vue.extend({
             } else if (groupName.length > 6) {
                 return "最多6个字符"
             }
-            return true
+            return null
         },
-        addNewGroup() {
-            if (this.userOptions.length >= 100) {
-                this.$message({ type: "error", message: "您已添加超过100个分组！" })
+        addNewGroup(action, done) {
+            if (action == "cancel") {
+                done()
+                return
+            } else if (this.userOptions.length >= 100) {
+                this.$notify({ type: "danger", message: "您已添加超过100个分组！" })
+                done()
+                return
             }
-            // this.$prompt(文字框上的提示, 标题)
-            this.$prompt("最多6个字符", "请输入分组名称", {
-                confirmButtonText: "确定",
-                cancelButtonText: "取消",
-                inputValidator: this.groupNameValidator,
-            })
-                .then(({ value }) => {
+            let msg = this.groupNameValidator(this.addNewGroupInput)
+            if (msg != null) {
+                this.$notify({ type: "danger", message: msg })
+                done()
+            } else {
+                axios
+                    .get(`/api/user/userOption/addNewGroup?groupName=${this.addNewGroupInput}`)
+                    .then(({ data }) => {
+                        if (data.code == 0) {
+                            this.$notify({ type: "success", message: `你的新分组名称是: ${this.addNewGroupInput}` })
+                            this.addNewGroupInput = ""
+                            this.getGroups()
+                            done()
+                        } else {
+                            this.$notify({ type: "danger", message: data.msg })
+                            done()
+                        }
+                    })
+                    .catch(console.log)
+            }
+        },
+        delGroup(optionGroup) {
+            this.$dialog
+                .confirm({ title: "删除分组", message: `确认删除分组：【${optionGroup.groupName}】？` })
+                .then(() => {
                     axios
-                        .get(`/api/user/userOption/addNewGroup?groupName=${value}`)
-                        .then(({ data }) => {
-                            if (data.code == 0) {
-                                this.$message({ type: "success", message: `你的新分组名称是: ${value}` })
-                                this.getGroups()
-                            } else {
-                                this.$message({ type: "error", message: data.msg })
-                            }
+                        .get(`/api/user/userOption/delGroup?groupId=${optionGroup.groupId}`)
+                        .then(() => {
+                            this.$notify({ type: "success", message: "删除成功" })
+                            this.getGroups()
                         })
                         .catch(console.log)
                 })
-                .catch(() => {
-                    this.$message({ type: "info", message: "取消输入" })
-                })
-        },
-        delGroup(optionGroup) {
-            this.$confirm(`确认删除分组：【${optionGroup.groupName}】？`).then((_) => {
-                axios
-                    .get(`/api/user/userOption/delGroup?groupId=${optionGroup.groupId}`)
-                    .then(() => {
-                        this.$message({ type: "success", message: "删除成功" })
-                        this.getGroups()
-                    })
-                    .catch(console.log)
-            })
+                .catch(console.log)
         },
         moveGroup(groupRow, step) {
             this.swapGroup(groupRow, groupRow + step)
@@ -304,12 +317,16 @@ export default Vue.extend({
                         alert(data.msg)
                     } else {
                         this.getGroups()
-                        this.$message({ type: "success", message: "移动成功" })
+                        this.$notify({ type: "success", message: "移动成功" })
                     }
                 })
                 .catch(console.log)
         },
         renameGroup(optionGroup) {
+            // if (action == 'cancel') {
+            //     done()
+            //     return
+            // }
             this.$prompt("最多6个字符", "请输入新的分组名称", {
                 confirmButtonText: "确定",
                 cancelButtonText: "取消",
@@ -334,14 +351,15 @@ export default Vue.extend({
         },
         handleDelFunds(row) {
             if (this.activeGroupId == this.userOptions[0].groupId) {
-                this.$confirm("从【全部】分组中删除，也将删除其他分组的该基金，确认删除？")
-                    .then((_) => {
+                this.$dialog
+                    .confirm({ message: "从【全部】分组中删除，也将删除其他分组的该基金，确认删除？" })
+                    .then(() => {
                         this.delFunds([row.fundCode])
-                        done()
                     })
-                    .catch((_) => {})
+                    .catch(console.log)
+            } else {
+                this.delFunds([row.fundCode])
             }
-            this.delFunds([row.fundCode])
         },
         delFunds(funds) {
             axios
@@ -351,7 +369,7 @@ export default Vue.extend({
                 })
                 .then(({ data }) => {
                     if (data.code == 0) {
-                        this.$message({ type: "success", message: `删除成功` })
+                        this.$notify({ type: "success", message: "删除成功", duration: 500 })
                         this.getFunds()
                     }
                 })
@@ -379,6 +397,9 @@ export default Vue.extend({
                 })
                 .catch(console.log)
         },
+        clickInfo(currentRow) {
+            this.$router.push(`/info/${currentRow.fundCode}`)
+        },
     },
     mounted() {
         this.getGroups()
@@ -386,4 +407,25 @@ export default Vue.extend({
 })
 </script>
 
-<style lang="less" scoped></style>
+<style lang="less" scoped>
+// .topCard {
+//     margin: 5px;
+//     // height: 50px;
+// }
+
+.top-tabs {
+    margin: 5px 0;
+}
+
+.option {
+    margin: 5px;
+    margin-bottom: 50px;
+}
+
+.buttons {
+    // display: flex;
+    .option-group-manage-btn {
+        float: right;
+    }
+}
+</style>

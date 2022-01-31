@@ -1,7 +1,8 @@
 <template>
     <div>
         <Search />
-        <Footer />
+        <Footer activeNavProp="主页"/>
+        <el-button @click="test">测试按钮</el-button>
     </div>
 </template>
 
@@ -10,7 +11,6 @@ import Vue from "vue"
 import Search from "../components/common/Search.vue"
 import Footer from "../components/common/Footer.vue"
 import axios from "axios"
-// import Sortable from 'sortablejs'
 
 export default Vue.extend({
     components: { Search, Footer },
@@ -26,6 +26,11 @@ export default Vue.extend({
                 console.log(JSON.parse(localStorage.getItem("user")))
             })
             .catch(console.log)
+    },
+    methods: {
+        test() {
+            this.$notify({ type: "success", message: "通知内容" })
+        },
     },
 })
 </script>

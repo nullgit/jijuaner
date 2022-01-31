@@ -1,29 +1,41 @@
 <template>
     <div>
-        <!-- info/{{ $route.params.id }}-{{ fundInfo.fundCode }} -->
-        <div class="titleWrapper">
-            <div class="fundName">{{ fundInfo.fundName }}</div>
-            <div class="fundCode">{{ fundInfo.fundCode }}</div>
-            <div class="fundType">{{ fundInfo.fundType }}</div>
-        </div>
-        ---------------------------
-        <div class="infoWrapper">
-            <div class="yieldOneDay">日涨跌：{{ yieldOneDay }}%</div>
-            <div class="yieldOneYear">
-                近一年收益率：{{
-                    fundInfo.yieldOneYear ? `${fundInfo.yieldOneYear}%` : "该基金成立不足一年"
-                }}
+        <van-nav-bar :title="fundInfo.fundName" left-arrow @click-left="handleReturn" />
+
+        <el-card class="title-wrapper">
+            <div class="title-top-wrapper">
+                <div class="fund-name">{{ fundInfo.fundName }}</div>
+                <div class="fund-code">{{ fundInfo.fundCode }}</div>
+                <div class="fund-type">{{ fundInfo.fundType }}</div>
             </div>
-            <div class="netWorth">最新净值：{{ netWorth }}</div>
-        </div>
-        <div class="chartWrapper">
+
+            <ul class="title-bottom-wrapper">
+                <li class="yield-one-day">
+                    <div class="num">{{ yieldOneDay.toFixed(2) }}%</div>
+                    <div class="msg">日涨跌幅</div>
+                </li>
+                <li class="yield-one-year">
+                    <div class="num">
+                        {{ fundInfo.yieldOneYear ? `${fundInfo.yieldOneYear}%` : "该基金成立不足一年" }}
+                    </div>
+                    <div class="msg">近一年收益率</div>
+                </li>
+                <li class="net-worth">
+                    <div class="num">{{ netWorth }}</div>
+                    <div class="msg">最新净值</div>
+                </li>
+            </ul>
+        </el-card>
+
+        <el-card class="chart-wrapper">
             <el-tabs v-model="navName" @tab-click="handleClickNav">
                 <el-tab-pane label="收益详情" name="yieldDetail">
-                    <div class="yieldChart" id="yieldChart"></div>
+                    <div class="yield-chart" id="yield-chart"></div>
+
                     <el-tabs
+                        class="yield-nav"
                         v-model="yieldNavName"
                         tab-position="bottom"
-                        style="height: 200px"
                         @tab-click="handleClickYieldNav"
                     >
                         <el-tab-pane label="今年来" name="thisYear"></el-tab-pane>
@@ -34,22 +46,31 @@
                     </el-tabs>
                 </el-tab-pane>
 
-                <el-tab-pane label="实时估值" name="realTimeValuation"> 实时估值 </el-tab-pane>
+                <el-tab-pane label="实时估值" name="realTimeValuation">
+                    <div class="valuation-chart" id="valuation-chart"></div>
+                </el-tab-pane>
             </el-tabs>
-        </div>
-        <div class="detailWrapp">
-            
-        </div>
-        <div class="managersWrapper">
-            <div v-for="manager of fundInfo.currentManagers" :key="manager.managerId" class="managerWrapper">
-                <img :src="manager.pic" alt="">
-                {{manager.name}}-{{manager.workTime}}-{{manager.fundSize}}
+        </el-card>
+        
+        <div class="detail-wrapper"></div>
+
+        <el-card class="managers">
+            <div class="managers-title">基金经理</div>
+            <div v-for="manager of fundInfo.currentManagers" :key="manager.managerId" class="manager">
+                <div class="manager-info">
+                    <div class="manager-name">{{ manager.name }}</div>
+                    <div class="manager-work-time">从业{{ manager.workTime }}</div>
+                    <div class="manager-fund-size">管理基金{{ manager.fundSize }}</div>
+                </div>
+                <img :src="manager.pic" alt="" class="manager-img" />
             </div>
-        </div>
-        <div class="buttomBar">
-            <el-button v-if="isOptional" round @click="cancelOption">取消自选</el-button>
-            <el-button v-else type="warning" round @click="addOption">加自选</el-button>
-        </div>
+        </el-card>
+
+        <van-grid class="buttom-bar" :column-num="2">
+            <van-grid-item icon="comment-o" />
+            <van-grid-item v-if="isOptional" @click="cancelOption" icon="star" />
+            <van-grid-item v-else @click="addOption" icon="star-o" />
+        </van-grid>
     </div>
 </template>
 
@@ -57,7 +78,7 @@
 import Vue from "vue"
 import axios from "axios"
 import dayjs from "dayjs"
-import {config} from "../../../utils/config"
+import { config } from "../../../utils/config"
 
 export default Vue.extend({
     name: "Info",
@@ -70,6 +91,7 @@ export default Vue.extend({
             fundInfo: {
                 fundCode: "",
                 fundName: "",
+                fundType: "",
                 yieldOneYear: 0,
                 yieldSixMonths: 0,
                 yieldThreeMonths: 0,
@@ -112,7 +134,7 @@ export default Vue.extend({
         },
     },
     async asyncData({ params }) {
-        return {fundCode: params.id}
+        return { fundCode: params.id }
         // return axios
         //     .get(`${config.gateway}/api/fund/fundInfo/${params.id}`, {
         //         headers: {"Access-Control-Allow-Origin":"*",}
@@ -123,44 +145,49 @@ export default Vue.extend({
         //     .catch(console.log)
     },
     methods: {
+        handleReturn() {
+            history.back()
+        },
         getOptionalStatus() {
             axios
-            .get(`/api/user/userOption/isOptional?fundCode=${this.fundInfo.fundCode}`)
-            .then(({ data }) => {
-                if (data.code == 0) {
-                    this.isOptional = data.data
-                }
-            })
-            .catch(console.log)
+                .get(`/api/user/userOption/isOptional?fundCode=${this.fundInfo.fundCode}`)
+                .then(({ data }) => {
+                    if (data.code == 0) {
+                        this.isOptional = data.data
+                    }
+                })
+                .catch(console.log)
         },
         addOption() {
             axios
-            .post(`/api/user/userOption/addNewFunds`, {
-                funds: [this.fundInfo.fundCode],
-            })
-            .then(({ data }) => {
-                if(data.code == 0) {
-                    this.isOptional = true
-                }
-            })
-            .catch(console.log)
+                .post(`/api/user/userOption/addNewFunds`, {
+                    funds: [this.fundInfo.fundCode],
+                })
+                .then(({ data }) => {
+                    if (data.code == 0) {
+                        this.isOptional = true
+                        this.$notify({ type: "success", message: "添加自选成功", duration: 500, })
+                    }
+                })
+                .catch(console.log)
         },
         cancelOption() {
             axios
-            .post(`/api/user/userOption/delFunds`, {
-                funds: [this.fundInfo.fundCode],
-            })
-            .then(({ data }) => {
-                if(data.code == 0) {
-                    this.isOptional = false
-                }
-            })
-            .catch(console.log)
+                .post(`/api/user/userOption/delFunds`, {
+                    funds: [this.fundInfo.fundCode],
+                })
+                .then(({ data }) => {
+                    if (data.code == 0) {
+                        this.isOptional = false
+                        this.$notify({ type: "success", message: "取消自选成功", duration: 500, })
+                    }
+                })
+                .catch(console.log)
         },
         echartsInit() {
             // 在这里 acWorthTrend 是正序的，使用完后 acWorthTrend 会变成逆序的（时间从近到远）
             let acWorthTrend = this.fundInfo.acWorthTrend
-            let yieldChart = this.$echarts.init(document.getElementById("yieldChart"))
+            let yieldChart = this.$echarts.init(document.getElementById("yield-chart"))
             this.yieldChart = yieldChart
             this.establishmentDay = dayjs()
             this.days = []
@@ -251,6 +278,7 @@ export default Vue.extend({
             .get(`/api/fund/fundInfo/${this.fundCode}`)
             .then(({ data }) => {
                 this.fundInfo = { ...data.data }
+                console.log(this.fundInfo)
                 this.getOptionalStatus()
                 this.echartsInit()
                 this.fundInfo.acWorthTrend.reverse()
@@ -261,19 +289,107 @@ export default Vue.extend({
 </script>
 
 <style lang="less" scoped>
-.yieldChart {
-    width: 100%;
-    height: 300px;
-    // background-color: #bfa;
+van-nav-bar {
+    position: fixed;
+    top: 0;
 }
 
-.buttomBar {
+.title-wrapper {
+    margin: 5px;
+    .title-top-wrapper {
+        .fund-name {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .fund-code {
+            font-size: 14px;
+            color: gray;
+            display: inline-block;
+        }
+
+        .fund-type {
+            display: inline-block;
+            font-size: 12px;
+            color: blue;
+            background-color: #409eff;
+        }
+    }
+
+    .title-bottom-wrapper {
+        display: flex;
+        justify-content: space-evenly;
+        align-items: center;
+
+        li {
+            width: 100px;
+            display: flex;
+            flex-direction: column;
+            .msg {
+                font-size: 14px;
+                color: gray;
+            }
+        }
+
+        .yield-one-day {
+            .num {
+                color: red;
+                font-weight: bold;
+                font-size: 30px;
+            }
+        }
+    }
+}
+
+.chart-wrapper {
+    margin: 5px;
+    height: 400px;
+
+    .yield-chart,
+    .valuation-chart {
+        height: 250px;
+    }
+}
+
+.managers {
+    margin: 5px;
+    margin-bottom: 50px;
+    .managers-title {
+        font-weight: bold;
+        font-size: 18px;
+    }
+}
+
+.manager {
+    margin: 5px;
+    display: flex;
+    justify-content: space-between;
+
+    .manager-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        font-size: 14px;
+
+        .manager-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .manager-work-time,
+        .manager-fund-size {
+            color: grey;
+        }
+    }
+    .manager-img {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+.buttom-bar {
     height: 50px;
     width: 100%;
     position: fixed;
     bottom: 0;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
 }
 </style>

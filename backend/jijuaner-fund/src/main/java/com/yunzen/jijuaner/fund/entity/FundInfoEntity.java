@@ -16,10 +16,7 @@ public class FundInfoEntity implements Serializable {
     private String yieldThreeMonths;
     private String yieldOneMonth;
 
-    // private String acWorthTrend;
-    // private String ranksInSimilarType;
-    // private String currentManagers;
-    // private String scales;
+    private String fundType;
 
     private List<AcWorth> acWorthTrend;
     private List<RankInSimilarType> ranksInSimilarType;

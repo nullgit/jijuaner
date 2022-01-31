@@ -28,7 +28,7 @@ public class FundListService extends ServiceImpl<FundListDao, FundListEntity> {
     public void updateAll() {
         R allListResp = jsDataFeignService.getAllList();
         if (allListResp.getCode() == 0) {
-            List<FundListEntity> allList = JSON.parseObject((String) allListResp.getData(),
+            List<FundListEntity> allList = JSON.parseObject(JSON.toJSONString(allListResp.getData()),
                     new TypeReference<List<FundListEntity>>() {
                     });
             log.info("更新基金列表数据，共{}条", allList.size());
@@ -50,4 +50,15 @@ public class FundListService extends ServiceImpl<FundListDao, FundListEntity> {
             return "不存在的基金代码";
         }
     }
+
+    @Cacheable(cacheNames = "jijuaner:fundType")
+    public String getFundType(String fundCode) {
+        FundListEntity entity = baseMapper.selectById(fundCode);
+        if (entity != null) {
+            return entity.getFundType();
+        } else {
+            return null;
+        }
+    }
+
 }

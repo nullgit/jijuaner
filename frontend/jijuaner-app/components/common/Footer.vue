@@ -1,50 +1,30 @@
 <template>
-    <ul class="footer">
-        <li v-for="navItem of nav" :key="navItem.name">
-            <nuxt-link :to="navItem.to">
-                <i :class="navItem.icon"></i>
-                <div>{{ navItem.name }}</div>
-            </nuxt-link>
-            <!-- {{navItem.icon}}-{{navItem.a}}-{{navItem.name}} -->
-            <!-- <el-button>默认按钮</el-button> -->
-        </li>
-    </ul>
+    <van-tabbar v-model="activeNav" class="footer">
+        <van-tabbar-item
+            v-for="navItem of nav"
+            :name="navItem.name"
+            :key="navItem.name"
+            :icon="navItem.icon"
+            :to="navItem.to"
+        >
+            {{ navItem.name }}
+        </van-tabbar-item>
+    </van-tabbar>
 </template>
 
-<script lang='ts'>
+<script>
 export default {
     name: "Footer",
+    props: ["activeNavProp"],
     data() {
         return {
+            activeNav: this.activeNavProp,
             nav: [
-                { icon: "el-icon-s-home", to: "/", name: "主页" },
-                { icon: "el-icon-star-on", to: "option", name: "自选" },
-                { icon: "el-icon-s-custom", to: "my", name: "我的" },
+                { icon: "home-o", to: "/", name: "主页" },
+                { icon: "star-o", to: "option", name: "自选" },
+                { icon: "user-circle-o", to: "my", name: "我的" },
             ],
         }
     },
 }
 </script>
-
-<style lang='less' scoped>
-.footer {
-    height: 50px;
-    width: 100%;
-
-    position: fixed;
-    bottom: 0;
-
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
-}
-
-i {
-    background-color: #bfa;
-}
-
-a {
-    text-decoration: none;
-    color: inherit;
-}
-</style>

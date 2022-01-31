@@ -1,7 +1,6 @@
 <template>
     <!-- <el-input placeholder="请输入内容" prefix-icon="el-icon-search" v-model="input2"> </el-input> -->
     <!--
-
         prefix-icon 是前面的图标
      -->
     <el-autocomplete
@@ -46,19 +45,15 @@ export default {
             callback([])
         },
         handleSelect(item) {
-            // console.log(item)
-            location.assign(`/info/${item.fundCode}`)
+            this.$router.push(`/info/${item.fundCode}`)
         },
-    },
-    mounted() {
-        // this.restaurants = this.loadAll()
     },
 }
 </script>
 
 <style lang='less' scoped>
 .search-box {
-    width: 100%;
-    height: 180px;
+    width: 95%;
+    margin: 5px;
 }
 </style>

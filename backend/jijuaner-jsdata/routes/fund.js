@@ -6,7 +6,7 @@ const { JiJuanerException } = require("./utils/JiJuanerException")
 router.prefix("/jsdata/fund")
 
 router.get("/hello", async (ctx) => {
-    ctx.body = new R().ok().putMsg("hello, jijuaner jsdata!")
+    ctx.body = new R().ok().putMsg("hello, jijuaner jsdata fund!")
 })
 
 router.get("/list", async (ctx, next) => {
@@ -113,31 +113,29 @@ router.get("/info/:fund_code", async (ctx, next) => {
                     fundSize: manager.fundSize,
                 })
             }
-            ctx.response.body = new R().ok().putData(
-                JSON.stringify({
-                    fundName: fS_name,
-                    fundCode: fS_code,
-                    yieldOneYear: syl_1n,
-                    yieldSixMonths: syl_6y,
-                    yieldThreeMonths: syl_3y,
-                    yieldOneMonth: syl_1y,
-                    // netWorthTrend: Data_netWorthTrend,
-                    acWorthTrend: Data_ACWorthTrend,
-                    // [{ x: 1357228800000, y: 1.0}, ...]
-                    ranksInSimilarType: Data_rateInSimilarType,
-                    // [{ x: 1357228800000, y: 303, total: 389 }, ...]
-                    currentManagers: Data_currentFundManager,
-                    // [{
-                    //     managerId: "xxx",
-                    //     pic: "http://xxx",
-                    //     name: "xxx",
-                    //     workTime: "xxx",
-                    //     fundSize: "xxx"
-                    // }, ...]
-                    scales: Data_fluctuationScale,
-                    // [{ x: "2021-09-30", y: 100.01}, ...]
-                })
-            )
+            ctx.response.body = new R().ok().putData({
+                fundName: fS_name,
+                fundCode: fS_code,
+                yieldOneYear: syl_1n,
+                yieldSixMonths: syl_6y,
+                yieldThreeMonths: syl_3y,
+                yieldOneMonth: syl_1y,
+                // netWorthTrend: Data_netWorthTrend,
+                acWorthTrend: Data_ACWorthTrend,
+                // [{ x: 1357228800000, y: 1.0}, ...]
+                ranksInSimilarType: Data_rateInSimilarType,
+                // [{ x: 1357228800000, y: 303, total: 389 }, ...]
+                currentManagers: Data_currentFundManager,
+                // [{
+                //     managerId: "xxx",
+                //     pic: "http://xxx",
+                //     name: "xxx",
+                //     workTime: "xxx",
+                //     fundSize: "xxx"
+                // }, ...]
+                scales: Data_fluctuationScale,
+                // [{ x: "2021-09-30", y: 100.01}, ...]
+            })
         })
         .catch((err) => {
             console.log(err)

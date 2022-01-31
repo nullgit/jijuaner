@@ -30,6 +30,9 @@ public class FundInfoService {
     private JSDataFeignService jsDataFeignService;
 
     @Autowired
+    private FundListService fundListService;
+
+    @Autowired
     private StringRedisTemplate redisTemplate;
 
     public FundInfoEntity getInfoById(String id) throws FundInfoException, FeignException {
@@ -48,9 +51,10 @@ public class FundInfoService {
         }
         R infoResp = jsDataFeignService.getInfoById(id);
         if (infoResp.getCode() == 0) {
-            String resultJSON = (String) infoResp.getData();
+            String resultJSON = JSON.toJSONString(infoResp.getData());
             FundInfoEntity fundInfo = JSON.parseObject(resultJSON, FundInfoEntity.class);
-            opsForValue.set(key, resultJSON);
+            fundInfo.setFundType(fundListService.getFundType(id));
+            opsForValue.set(key, JSON.toJSONString(fundInfo));
             opsForValue.set(timeKey, Long.toString(System.currentTimeMillis()));
             return fundInfo;
         } else if (infoResp.getCode() == 10001) {

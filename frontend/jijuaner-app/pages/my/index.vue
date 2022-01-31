@@ -1,22 +1,31 @@
 <template>
-    <div>
-        <el-card>
-            <div id="top-cart">
-                <div id="head-warper" class="block">
-                    <el-avatar :size="50" :src="userInfo.headImg"></el-avatar>
+    <div class="my">
+        <el-card class="user-card-wrapper">
+            <div class="user-card">
+                <div class="head-wrapper">
+                    <van-image round width="80px" height="80px" fit="cover" :src="userInfo.headImg" />
                 </div>
-                <div id="user-info-warper">
-                    <nuxt-link :to="userInfo.userName.length > 0 ? 'setting' : 'signIn'">
-                        <div id="user-name">{{ userInfo.userName.length > 0 ? userInfo.userName : "登录/注册" }}</div>
-                        <div id="user-info"></div>
-                    </nuxt-link>
+
+                <div class="user-info-wrapper">
+                    <div class="user-name">
+                        <nuxt-link :to="userInfo.userName.length > 0 ? 'setting' : 'signIn'">
+                            <div class="user-name">
+                                {{ userInfo.userName.length > 0 ? userInfo.userName : "登录/注册" }}
+                            </div>
+                        </nuxt-link>
+                    </div>
+                    <div class="email">邮箱：{{ userInfo.email.length > 0 ? userInfo.email : "" }}</div>
                 </div>
             </div>
-            <div id="bottom-cart">bottom-cart</div>
         </el-card>
-        <button @click="test">test</button>
-        <!-- test -->
-        <Footer />
+        <!-- <el-card>
+
+        </el-card> -->
+        <van-cell-group inset>
+            <van-cell icon="setting-o" title="设置" is-link to="setting" />
+            <!-- <van-cell title="单元格" value="内容" label="描述信息" /> -->
+        </van-cell-group>
+        <Footer activeNavProp="我的" />
     </div>
 </template>
 
@@ -24,7 +33,6 @@
 import axios from "axios"
 import Vue from "vue"
 import Footer from "../../components/common/Footer.vue"
-import { config } from "../../utils/config.js"
 
 export default Vue.extend({
     name: "My",
@@ -45,9 +53,7 @@ export default Vue.extend({
         // user: JSON.parse(localStorage.getItem("user"))
     },
     asyncData({ params }) {},
-    methods: {
-        test() {},
-    },
+    methods: {},
     mounted() {
         axios
             .get(`/api/user/userList/getLoggedUserInfo`)
@@ -68,8 +74,37 @@ export default Vue.extend({
 </script>
 
 <style lang="less" scoped>
-#top-cart {
-    height: 200px;
-    display: flex;
+.user-card-wrapper {
+    margin: 5px;
+
+    .user-card {
+        width: 100%;
+        height: 100px;
+        display: flex;
+        justify-items: flex-start;
+        align-items: center;
+
+        .head-wrapper {
+            width: 100px;
+        }
+
+        .user-info-wrapper {
+            width: 300px;
+            height: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+
+            .user-name {
+                color: black;
+                font-size: 20px;
+                font-weight: bold;
+            }
+
+            .email {
+                color: black;
+            }
+        }
+    }
 }
 </style>

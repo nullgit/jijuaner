@@ -1,35 +1,41 @@
 <template>
     <div>
-        <el-form id="loginForm" ref="loginForm" :model="loginForm" status-icon :rules="rules" label-width="100px">
-            <el-form-item label="邮箱" prop="email">
-                <el-input v-model="loginForm.email"></el-input>
-            </el-form-item>
+        <van-nav-bar title="注册" left-arrow @click-left="handleReturn" />
+        <el-card class="login-card">
+            <div class="title">注册鸡圈儿</div>
+            <el-form class="login-form" ref="loginForm" :model="loginForm" status-icon :rules="rules" label-width="80px">
+                <el-form-item label="邮箱" prop="email">
+                    <el-input v-model="loginForm.email"></el-input>
+                </el-form-item>
 
-            <el-form-item label="验证码" prop="verificationCode">
-                <el-input v-model="loginForm.verificationCode" autocomplete="off"></el-input>
-                <el-button
-                    id="sendCodeBtn"
-                    :disabled="loginForm.sendCodeBtn.disabled"
-                    @click="sendCode"
-                    type="primary"
-                    >{{ loginForm.sendCodeBtn.msg }}</el-button
-                >
-            </el-form-item>
+                <el-form-item label="验证码" prop="verificationCode">
+                    <el-input v-model="loginForm.verificationCode" autocomplete="off"></el-input>
+                    <el-button
+                        class="send-code-btn"
+                        :disabled="loginForm.sendCodeBtn.disabled"
+                        @click="sendCode"
+                        type="primary"
+                        >{{ loginForm.sendCodeBtn.msg }}</el-button
+                    >
+                </el-form-item>
 
-            <el-form-item label="密码" prop="password">
-                <el-input type="password" v-model="loginForm.password" autocomplete="off"></el-input>
-            </el-form-item>
+                <el-form-item label="密码" prop="password">
+                    <el-input type="password" v-model="loginForm.password" autocomplete="off"></el-input>
+                </el-form-item>
 
-            <el-form-item label="确认密码" prop="checkPassword">
-                <el-input type="password" v-model="loginForm.checkPassword" autocomplete="off"></el-input>
-            </el-form-item>
+                <el-form-item label="确认密码" prop="checkPassword">
+                    <el-input type="password" v-model="loginForm.checkPassword" autocomplete="off"></el-input>
+                </el-form-item>
 
-            <el-form-item>
-                <el-button type="primary" @click="submitForm('loginForm')">提交</el-button>
-                <el-button @click="resetForm('loginForm')">重置</el-button>
-            </el-form-item>
-        </el-form>
-        <div>{{ `${loginForm.email}-${loginForm.password}-${loginForm.checkPassword}` }}</div>
+                <el-form-item>
+                    <el-button type="primary" @click="submitForm('loginForm')">提交</el-button>
+                    <el-button @click="resetForm('loginForm')">重置</el-button>
+                </el-form-item>
+            </el-form>
+            <nuxt-link to="signIn">
+                <div class="sign-in">已有账号，去登录→</div>
+            </nuxt-link>
+        </el-card>
     </div>
 </template>
 
@@ -98,6 +104,9 @@ export default Vue.extend({
         }
     },
     methods: {
+        handleReturn() {
+            history.back()
+        },
         testEmail(email) {
             return /\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/.test(email)
         },
@@ -113,7 +122,7 @@ export default Vue.extend({
                         .then(({ data }) => {
                             alert(data.msg)
                             if (data.code != JiJuanerException.LOGIN_EXCEPTION.code) {
-                                location.assign("http://app.jijuaner.com:3000/signIn")
+                                this.$router.push(`/signIn`)
                             }
                         })
                         .catch(console.log)
@@ -131,7 +140,7 @@ export default Vue.extend({
                 console.log("要发邮件了！" + this.loginForm.email)
                 axios.get(`/api/user/userList/sendCode?email=${this.loginForm.email}`)
                 this.loginForm.sendCodeBtn.disabled = true
-                let countDownNum = 3
+                let countDownNum = 10
                 let timer = setInterval(() => {
                     --countDownNum
                     this.loginForm.sendCodeBtn.msg = `${countDownNum}s后重新发送`
@@ -149,4 +158,24 @@ export default Vue.extend({
 })
 </script>
 
-<style lang="less" scoped></style>
+<style lang="less" scoped>
+.login-card {
+    margin: 5px;
+
+    .title {
+        font-size: 20px;
+        font-weight: bold;
+        text-align: center;
+        padding: 10px;
+    }
+
+    .send-code-btn {
+        margin-top: 5px;
+    }
+
+    .sign-in {
+        font-size: 14px;
+        color: gray;
+    }
+}
+</style>
