@@ -1,5 +1,7 @@
 package com.yunzen.jijuaner.user.controller;
 
+import java.util.Map;
+
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpSession;
 
@@ -82,10 +84,13 @@ public class UserListContoller {
             if (UserInterceptor.toThreadLocal.get() == null) {
                 throw new SignInException("该用户没有登录信息");
             }
+            // TODO session 里面不应该存放 userName 等会变更的信息
+            UserListEntity user = userListService.getById(UserInterceptor.toThreadLocal.get().getUserId());
+            user.setPassword("");
+            return R.ok().putData(user);
         } catch (SignInException e) {
             return R.error().putCode(JiJuanerException.SIGN_IN_EXCEPTION.getCode()).putMsg(e.getMessage());
         }
-        return R.ok().putData(UserInterceptor.toThreadLocal.get());
     }
 
     @RequestMapping("/sendCode")
@@ -108,5 +113,23 @@ public class UserListContoller {
             return false;
         }
         return email.matches(emailRegex);
+    }
+
+    @RequestMapping("/getOssPolicy")
+    public R getOssPolicy() {
+        Map<String, String> ossPolicy = userListService.getOssPolicy();
+        return R.ok().putData(ossPolicy);
+    }
+
+    @RequestMapping("/setHeadImg")
+    public R setHeadImg(@RequestParam("headImg") String headImg) {
+        userListService.setHeadImg(UserInterceptor.toThreadLocal.get().getUserId(), headImg);
+        return R.ok().putData(headImg);
+    }
+
+    @RequestMapping("/rename")
+    public R rename(String name) {
+        userListService.rename(UserInterceptor.toThreadLocal.get().getUserId(), name);
+        return R.ok().putMsg("重命名成功");
     }
 }

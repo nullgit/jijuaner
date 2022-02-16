@@ -37,6 +37,7 @@ import axios from "axios"
 import Vue from "vue"
 import { JiJuanerException } from "../../utils/JiJuanerException"
 import { config } from "../../utils/config"
+import { handleReturn } from "../../utils/common"
 
 export default Vue.extend({
     name: "SignIn",
@@ -72,9 +73,7 @@ export default Vue.extend({
         }
     },
     methods: {
-        handleReturn() {
-            history.back()
-        },
+        handleReturn,
         submitForm(formName) {
             this.$refs[formName].validate((valid) => {
                 if (valid) {

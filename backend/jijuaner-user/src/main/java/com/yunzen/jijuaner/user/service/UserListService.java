@@ -1,18 +1,26 @@
 package com.yunzen.jijuaner.user.service;
 
 import java.security.GeneralSecurityException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 
+import javax.annotation.Resource;
 import javax.mail.Message;
 import javax.mail.MessagingException;
-import javax.mail.NoSuchProviderException;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.common.utils.BinaryUtil;
+import com.aliyun.oss.model.MatchMode;
+import com.aliyun.oss.model.PolicyConditions;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sun.mail.util.MailSSLSocketFactory;
@@ -23,6 +31,8 @@ import com.yunzen.jijuaner.user.exception.LoginException;
 import com.yunzen.jijuaner.user.exception.SignInException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -33,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service("userListService")
 @Slf4j
+@RefreshScope
 public class UserListService extends ServiceImpl<UserListDao, UserListEntity> {
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
@@ -138,5 +149,71 @@ public class UserListService extends ServiceImpl<UserListDao, UserListEntity> {
             sb = sb.append(letters[random.nextInt(0, letters.length)]);
         }
         return sb.toString();
+    }
+
+    @Resource
+    private OSSClient ossClient;
+    @Value("${spring.cloud.alicloud.oss.endpoint}")
+    private String endpoint;
+    @Value("${spring.cloud.alicloud.oss.bucket-name}")
+    private String bucket;
+    @Value("${spring.cloud.alicloud.access-key}")
+    private String accessId;
+
+    public Map<String, String> getOssPolicy() {
+        String host = "https://" + bucket + "." + endpoint; // host 的格式为 bucketname.endpoint
+        // callbackUrl 为上传回调服务器的 URL，请将下面的 IP 和 Port 配置为您自己的真实信息。
+        // String callbackUrl = "http://88.88.88.88:8888";
+
+        String date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        String dir = "jijuaner/headImg/" + date + "/"; // 用户上传文件时指定的前缀。
+
+        // 创建OSSClient实例。
+        var respMap = new LinkedHashMap<String, String>();
+        try {
+            long expireTime = 30;
+            long expireEndTime = System.currentTimeMillis() + expireTime * 1000;
+            Date expiration = new Date(expireEndTime);
+            // PostObject 请求最大可支持的文件大小为 5 GB，即 CONTENT_LENGTH_RANGE 为 5*1024*1024*1024。
+            PolicyConditions policyConds = new PolicyConditions();
+            policyConds.addConditionItem(PolicyConditions.COND_CONTENT_LENGTH_RANGE, 0, 1048576000);
+            policyConds.addConditionItem(MatchMode.StartWith, PolicyConditions.COND_KEY, dir);
+
+            String postPolicy = ossClient.generatePostPolicy(expiration, policyConds);
+            byte[] binaryData = postPolicy.getBytes("utf-8");
+            String encodedPolicy = BinaryUtil.toBase64String(binaryData);
+            String postSignature = ossClient.calculatePostSignature(postPolicy);
+
+            respMap.put("accessid", accessId);
+            respMap.put("policy", encodedPolicy);
+            respMap.put("signature", postSignature);
+            respMap.put("dir", dir);
+            respMap.put("host", host);
+            respMap.put("expire", String.valueOf(expireEndTime / 1000));
+            // JSONObject jasonCallback = new JSONObject();
+            // jasonCallback.put("callbackUrl", callbackUrl);
+            // jasonCallback.put("callbackBody",
+            // "filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}");
+            // jasonCallback.put("callbackBodyType", "application/x-www-form-urlencoded");
+            // String base64CallbackBody =
+            // BinaryUtil.toBase64String(jasonCallback.toString().getBytes());
+            // respMap.put("callback", base64CallbackBody);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        return respMap;
+    }
+
+    public void setHeadImg(Integer userId, String url) {
+        UserListEntity entity = baseMapper
+                .selectOne(new QueryWrapper<UserListEntity>().select("user_id", "head_img").eq("user_id", userId));
+        String oldImg = entity.getHeadImg();
+        entity.setHeadImg(url);
+        baseMapper.updateById(entity);
+        ossClient.deleteObject(bucket, oldImg.replace("https://" + bucket + "." + endpoint + "/", ""));
+    }
+
+    public void rename(Integer userId, String name) {
+        // TODO
     }
 }

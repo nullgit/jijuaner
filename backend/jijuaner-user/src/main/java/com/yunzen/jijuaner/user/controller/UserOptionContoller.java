@@ -146,10 +146,10 @@ public class UserOptionContoller {
         return R.ok().putMsg("交换分组成功！");
     }
 
-    @RequestMapping("/editFund")
-    public R editFund(@RequestBody UserOptionVo vo) {
-        userOptionService.editFund(UserInterceptor.toThreadLocal.get().getUserId(), vo.getGroupId(),
-                vo.getFunds());
-        return R.ok().putMsg("编辑分组中的基金成功！");
-    }
+    // @RequestMapping("/editFund")
+    // public R editFund(@RequestBody UserOptionVo vo) {
+    //     userOptionService.editFund(UserInterceptor.toThreadLocal.get().getUserId(), vo.getGroupId(),
+    //             vo.getFunds());
+    //     return R.ok().putMsg("编辑分组中的基金成功！");
+    // }
 }

@@ -3,7 +3,17 @@
         <el-card class="user-card-wrapper">
             <div class="user-card">
                 <div class="head-wrapper">
-                    <van-image round width="80px" height="80px" fit="cover" :src="userInfo.headImg" />
+                    <el-upload
+                        class="head-uploader"
+                        :data="oss"
+                        action="https://jijuaner-oss.oss-cn-shanghai.aliyuncs.com"
+                        :before-upload="getOssPolicy"
+                        :show-file-list="false"
+                        :on-success="uploadHeadImgSuccess"
+                    >
+                        <img class="head-img" v-if="userInfo.headImg" :src="userInfo.headImg" alt="" />
+                        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                    </el-upload>
                 </div>
 
                 <div class="user-info-wrapper">
@@ -18,9 +28,7 @@
                 </div>
             </div>
         </el-card>
-        <!-- <el-card>
 
-        </el-card> -->
         <van-cell-group inset>
             <van-cell icon="setting-o" title="设置" is-link to="setting" />
             <!-- <van-cell title="单元格" value="内容" label="描述信息" /> -->
@@ -33,6 +41,7 @@
 import axios from "axios"
 import Vue from "vue"
 import Footer from "../../components/common/Footer.vue"
+import {nanoid} from 'nanoid'
 
 export default Vue.extend({
     name: "My",
@@ -47,28 +56,57 @@ export default Vue.extend({
                 email: "",
                 userName: "",
             },
+            oss: {
+                policy: "",
+                signature: "",
+                key: "",
+                ossaccessKeyId: "",
+                dir: "",
+                host: "",
+            },
         }
     },
-    computed: {
-        // user: JSON.parse(localStorage.getItem("user"))
-    },
+    computed: {},
     asyncData({ params }) {},
-    methods: {},
+    methods: {
+        async getOssPolicy(file) {
+            await axios
+                .get(`/api/user/userList/getOssPolicy`)
+                .then(({ data }) => {
+                    this.oss.policy = data.data.policy
+                    this.oss.signature = data.data.signature
+                    this.oss.ossaccessKeyId = data.data.accessid
+                    this.oss.key = data.data.dir + nanoid() + "_" + file.name
+                    this.oss.dir = data.data.dir
+                    this.oss.host = data.data.host
+                })
+                .catch(console.log)
+        },
+        uploadHeadImgSuccess({file}) {
+            let headImg = `${this.oss.host}/${this.oss.key}`
+            axios
+                .get(`/api/user/userList/setHeadImg?headImg=${headImg}`)
+                .then(({ data }) => {
+                    this.$notify({ type: "success", message: "头像上传成功", duration: 500 })
+                    this.userInfo.headImg = headImg
+                    localStorage.setItem("user", JSON.stringify(this.userInfo))
+                })
+                .catch(console.log)
+        },
+    },
     mounted() {
         axios
             .get(`/api/user/userList/getLoggedUserInfo`)
             .then(({ data }) => {
                 localStorage.setItem("user", JSON.stringify(data.data))
-                console.log(JSON.parse(localStorage.getItem("user")))
             })
             .catch(console.log)
 
         let user = JSON.parse(localStorage.getItem("user"))
         if (user != null) {
-            this.userInfo.userId = user.userId
-            this.userInfo.email = user.email
-            this.userInfo.userName = user.userName
+            this.userInfo = user
         }
+        console.log(this.userInfo)
     },
 })
 </script>
@@ -86,6 +124,15 @@ export default Vue.extend({
 
         .head-wrapper {
             width: 100px;
+
+            .head-uploader {
+                width: 80px;
+                height: 80px;
+                .head-img {
+                    width: 80px;
+                    height: 80px;
+                }
+            }
         }
 
         .user-info-wrapper {

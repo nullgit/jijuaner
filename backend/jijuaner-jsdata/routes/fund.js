@@ -139,7 +139,6 @@ router.get("/info/:fund_code", async (ctx, next) => {
         })
         .catch((err) => {
             console.log(err)
-            console.log("该基金数据不存在或出错了~")
             ctx.body = new R()
                 .error()
                 .putCode(JiJuanerException.FUND_INFO_EXCEPTION.code)

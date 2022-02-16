@@ -3,6 +3,7 @@
         <van-nav-bar title="设置" left-arrow @click-left="handleReturn" />
 
         <van-cell-group inset>
+            <van-cell title="上传的头像" value="原来的头像" />
             <van-cell title="重命名" value="原来的名字" />
             <van-cell title="更换邮箱" value="原来的邮箱" />
         </van-cell-group>
@@ -16,13 +17,12 @@
 
 <script>
 import Vue from "vue"
+import { handleReturn } from "../../utils/common"
 
 export default Vue.extend({
     name: "Setting",
     methods: {
-        handleReturn() {
-            history.back()
-        },
+        handleReturn,
     },
 })
 </script>

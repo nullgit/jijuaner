@@ -1,0 +1,3 @@
+exports.handleReturn = () => {
+    history.back()
+}

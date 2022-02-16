@@ -43,6 +43,7 @@
 import axios from "axios"
 import Vue from "vue"
 import { JiJuanerException } from "../../utils/JiJuanerException"
+import { handleReturn } from "../../utils/common"
 
 export default Vue.extend({
     name: "Login",
@@ -104,9 +105,7 @@ export default Vue.extend({
         }
     },
     methods: {
-        handleReturn() {
-            history.back()
-        },
+        handleReturn,
         testEmail(email) {
             return /\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/.test(email)
         },

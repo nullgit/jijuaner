@@ -13,4 +13,7 @@ public interface JSDataFeignService {
 
     @RequestMapping("/jsdata/fund/info/{id}")
     public R getInfoById(@PathVariable("id") String id);
+
+    @RequestMapping("/jsdata/index/list")
+    public R getAllIndex();
 }

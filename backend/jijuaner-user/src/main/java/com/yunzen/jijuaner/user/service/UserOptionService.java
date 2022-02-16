@@ -153,15 +153,15 @@ public class UserOptionService extends ServiceImpl<UserOptionDao, UserOptionEnti
         }
     }
 
-    // TODO
-    public void editFund(Integer userId, Integer groupId, List<String> groupFunds) {
-        // String newGroupFunds = UserUtils.listToString(groupFunds, ",");
-        // var entity = new OptionGroupFundEntity();
-        // entity.setGroupId(groupId);
-        // entity.setGroupFunds(newGroupFunds);
-        // baseMapper.update(entity,
-        // new UpdateWrapper<OptionGroupFundEntity>().eq("user_id", userId).and(w ->
-        // w.eq("group_id", groupId)));
-    }
+
+    // public void editFund(Integer userId, Integer groupId, List<String> groupFunds) {
+    //     String newGroupFunds = UserUtils.listToString(groupFunds, ",");
+    //     var entity = new OptionGroupFundEntity();
+    //     entity.setGroupId(groupId);
+    //     entity.setGroupFunds(newGroupFunds);
+    //     baseMapper.update(entity,
+    //     new UpdateWrapper<OptionGroupFundEntity>().eq("user_id", userId).and(w ->
+    //     w.eq("group_id", groupId)));
+    // }
 
 }

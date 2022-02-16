@@ -51,7 +51,7 @@
                 </el-tab-pane>
             </el-tabs>
         </el-card>
-        
+
         <div class="detail-wrapper"></div>
 
         <el-card class="managers">
@@ -78,6 +78,7 @@
 import Vue from "vue"
 import axios from "axios"
 import dayjs from "dayjs"
+import { handleReturn } from "../../../utils/common"
 import { config } from "../../../utils/config"
 
 export default Vue.extend({
@@ -145,9 +146,7 @@ export default Vue.extend({
         //     .catch(console.log)
     },
     methods: {
-        handleReturn() {
-            history.back()
-        },
+        handleReturn,
         getOptionalStatus() {
             axios
                 .get(`/api/user/userOption/isOptional?fundCode=${this.fundInfo.fundCode}`)
@@ -166,7 +165,7 @@ export default Vue.extend({
                 .then(({ data }) => {
                     if (data.code == 0) {
                         this.isOptional = true
-                        this.$notify({ type: "success", message: "添加自选成功", duration: 500, })
+                        this.$notify({ type: "success", message: "添加自选成功", duration: 500 })
                     }
                 })
                 .catch(console.log)
@@ -179,7 +178,7 @@ export default Vue.extend({
                 .then(({ data }) => {
                     if (data.code == 0) {
                         this.isOptional = false
-                        this.$notify({ type: "success", message: "取消自选成功", duration: 500, })
+                        this.$notify({ type: "success", message: "取消自选成功", duration: 500 })
                     }
                 })
                 .catch(console.log)

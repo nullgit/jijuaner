@@ -18,4 +18,5 @@ public class UserListEntity implements Serializable {
     private String userName;
     private String email;
     private String password;
+    private String headImg;
 }

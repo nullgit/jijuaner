@@ -9,6 +9,7 @@ import com.yunzen.jijuaner.common.exception.FeignException;
 import com.yunzen.jijuaner.common.utils.JiJuanerConstantString;
 import com.yunzen.jijuaner.common.utils.R;
 import com.yunzen.jijuaner.common.utils.TimeUtils;
+import com.yunzen.jijuaner.fund.config.FundUtils;
 import com.yunzen.jijuaner.fund.entity.FundInfoEntity;
 import com.yunzen.jijuaner.fund.exception.FundInfoException;
 import com.yunzen.jijuaner.fund.feign.JSDataFeignService;
@@ -40,18 +41,25 @@ public class FundInfoService {
         String timeKey = JiJuanerConstantString.FUND_INFO_TIME.getConstant() + id;
         String key = JiJuanerConstantString.FUND_INFO.getConstant() + id;
 
-        String timeJSON = opsForValue.get(timeKey);
-        if (timeJSON != null) {
-            LocalDateTime saveTime = TimeUtils.timeStrampToLocalDateTime(Long.parseLong(timeJSON));
-            if (saveTime.isAfter(LocalDateTime.now().minusHours(6))) {
-                // 如果是 6 小时内的数据，直接返回
-                String resultJSON = opsForValue.get(key);
-                return JSON.parseObject(resultJSON, FundInfoEntity.class);
-            }
+        // String timeJSON = opsForValue.get(timeKey);
+        // if (timeJSON != null) {
+        // LocalDateTime saveTime =
+        // TimeUtils.timeStrampToLocalDateTime(Long.parseLong(timeJSON));
+        // if (saveTime.isAfter(LocalDateTime.now().minusHours(6))) {
+        // // 如果是 6 小时内的数据，直接返回
+        // String resultJSON = opsForValue.get(key);
+        // return JSON.parseObject(resultJSON, FundInfoEntity.class);
+        // }
+        // }
+        String resultJSON = FundUtils.getRedisKeyIfInValidTime(opsForValue, timeKey, key,
+                LocalDateTime.now().minusHours(6));
+        if (resultJSON != null) {
+            return JSON.parseObject(resultJSON, FundInfoEntity.class);
         }
+
         R infoResp = jsDataFeignService.getInfoById(id);
         if (infoResp.getCode() == 0) {
-            String resultJSON = JSON.toJSONString(infoResp.getData());
+            resultJSON = JSON.toJSONString(infoResp.getData());
             FundInfoEntity fundInfo = JSON.parseObject(resultJSON, FundInfoEntity.class);
             fundInfo.setFundType(fundListService.getFundType(id));
             opsForValue.set(key, JSON.toJSONString(fundInfo));
