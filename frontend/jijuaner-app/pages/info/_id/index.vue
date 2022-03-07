@@ -1,6 +1,6 @@
 <template>
     <div>
-        <van-nav-bar :title="fundInfo.fundName" left-arrow @click-left="handleReturn" />
+        <van-nav-bar :title="fundInfo.fundName" left-arrow @click-left="handleReturn" fixed placeholder />
 
         <el-card class="title-wrapper">
             <div class="title-top-wrapper">
@@ -47,7 +47,7 @@
                 </el-tab-pane>
 
                 <el-tab-pane label="实时估值" name="realTimeValuation">
-                    <div class="valuation-chart" id="valuation-chart"></div>
+                    <img :src="`http://j4.dfcfw.com/charts/pic6/${fundCode}.png?v=${new Date().getTime()}`" alt="">
                 </el-tab-pane>
             </el-tabs>
         </el-card>
@@ -67,7 +67,7 @@
         </el-card>
 
         <van-grid class="buttom-bar" :column-num="2">
-            <van-grid-item icon="comment-o" />
+            <van-grid-item icon="comment-o" :to="`/comments/${fundCode}`" />
             <van-grid-item v-if="isOptional" @click="cancelOption" icon="star" />
             <van-grid-item v-else @click="addOption" icon="star-o" />
         </van-grid>
@@ -288,11 +288,6 @@ export default Vue.extend({
 </script>
 
 <style lang="less" scoped>
-van-nav-bar {
-    position: fixed;
-    top: 0;
-}
-
 .title-wrapper {
     margin: 5px;
     .title-top-wrapper {

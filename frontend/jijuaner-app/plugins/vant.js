@@ -15,7 +15,8 @@ import {
     Image as VanImage,
     Cell,
     CellGroup,
-    Swipe, SwipeItem, Uploader
+    Swipe, SwipeItem, Uploader,
+    Popup, Badge, Icon, List
 } from "vant"
 
 // 目前在 nuxt 中无法按需引入样式，因此采用手动引入的方式
@@ -37,3 +38,4 @@ Vue.use(Notify)
     .use(Cell)
     .use(CellGroup)
     .use(Swipe).use(SwipeItem).use(Uploader)
+    .use(Popup).use(Badge).use(Icon).use(List)

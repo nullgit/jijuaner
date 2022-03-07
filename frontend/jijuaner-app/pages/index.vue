@@ -10,7 +10,6 @@
             <van-grid-item v-for="item in icons" :key="item.text" :icon="item.icon" :text="item.text" :to="item.to" />
         </van-grid>
 
-        <el-button @click="test">测试按钮</el-button>
         <Footer activeNavProp="主页" />
     </div>
 </template>
@@ -36,8 +35,8 @@ export default Vue.extend({
                 { icon: "photo-o", text: "文字", to: "" },
             ],
             images: [
-                config.gateway + "/api/static/jijuaner/home/jijuaner-1.jpg",
-                config.gateway + "/api/static/jijuaner/home/jijuaner-2.jpg",
+                config.gateway + "/static/home/jijuaner-1.jpg",
+                config.gateway + "/static/home/jijuaner-2.jpg",
             ],
         }
     },
@@ -49,11 +48,6 @@ export default Vue.extend({
                 console.log(JSON.parse(localStorage.getItem("user")))
             })
             .catch(console.log)
-    },
-    methods: {
-        test() {
-            this.$notify({ type: "success", message: "通知内容" })
-        },
     },
 })
 </script>

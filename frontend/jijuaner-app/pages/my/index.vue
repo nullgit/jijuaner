@@ -11,8 +11,15 @@
                         :show-file-list="false"
                         :on-success="uploadHeadImgSuccess"
                     >
-                        <img class="head-img" v-if="userInfo.headImg" :src="userInfo.headImg" alt="" />
-                        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                        <img
+                            class="head-img"
+                            :src="
+                                userInfo.headImg != null && userInfo.headImg.length != 0
+                                    ? userInfo.headImg
+                                    : '/img/defaultHeadImg.png'
+                            "
+                            alt=""
+                        />
                     </el-upload>
                 </div>
 
@@ -41,7 +48,7 @@
 import axios from "axios"
 import Vue from "vue"
 import Footer from "../../components/common/Footer.vue"
-import {nanoid} from 'nanoid'
+import { nanoid } from "nanoid"
 
 export default Vue.extend({
     name: "My",
@@ -51,7 +58,7 @@ export default Vue.extend({
     data() {
         return {
             userInfo: {
-                headImg: "/img/defaultHeadImg.png",
+                headImg: "",
                 userId: -1,
                 email: "",
                 userName: "",
@@ -82,7 +89,7 @@ export default Vue.extend({
                 })
                 .catch(console.log)
         },
-        uploadHeadImgSuccess({file}) {
+        uploadHeadImgSuccess({ file }) {
             let headImg = `${this.oss.host}/${this.oss.key}`
             axios
                 .get(`/api/user/userList/setHeadImg?headImg=${headImg}`)

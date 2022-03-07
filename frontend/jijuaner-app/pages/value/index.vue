@@ -1,6 +1,6 @@
 <template>
     <div class="index-wrapper">
-        <van-nav-bar title="指数估值" left-arrow @click-left="handleReturn" />
+        <van-nav-bar title="指数估值" left-arrow @click-left="handleReturn" fixed placeholder />
 
         <el-table
             :data="indexList"
