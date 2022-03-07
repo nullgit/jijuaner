@@ -146,7 +146,7 @@ public class UserOptionService extends ServiceImpl<UserOptionDao, UserOptionEnti
         // 如果是向“全部”分组删除，则同时要删除 redis jijuaner:allOptionFunds:userId 中的基金，并删除其他分组中的列表基金
         if (groupId == null) {
             List<UserOptionEntity> group = this.getByUserId(userId, GROUP_ID, SORT);
-            group.stream().filter(entity -> entity.getSort() != 0)
+            group.stream().filter(entity -> entity.getSort() != 0).parallel()
                     .forEach(entity -> delFunds(userId, entity.getGroupId(), delFundSet));
             redisTemplate.opsForSet().remove(JiJuanerConstantString.ALL_OPTION_FUNDS.getConstant() + userId,
                     delFundSet.toArray());

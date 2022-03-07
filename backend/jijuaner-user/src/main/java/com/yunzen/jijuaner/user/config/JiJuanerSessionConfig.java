@@ -8,8 +8,6 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 
-import lombok.extern.slf4j.Slf4j;
-
 @Configuration
 public class JiJuanerSessionConfig {
     @Value("${config.domain}")  // 配置文件中的属性

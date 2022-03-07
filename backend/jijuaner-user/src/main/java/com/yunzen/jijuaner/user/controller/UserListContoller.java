@@ -1,19 +1,25 @@
 package com.yunzen.jijuaner.user.controller;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpSession;
 
 import com.yunzen.jijuaner.common.exception.JiJuanerException;
+import com.yunzen.jijuaner.common.interceptor.UserInterceptor;
+import com.yunzen.jijuaner.common.to.UserInfoTo;
 import com.yunzen.jijuaner.common.utils.R;
 import com.yunzen.jijuaner.user.entity.UserListEntity;
 import com.yunzen.jijuaner.user.exception.LoginException;
 import com.yunzen.jijuaner.user.exception.SignInException;
-import com.yunzen.jijuaner.user.interceptor.UserInterceptor;
 import com.yunzen.jijuaner.user.service.UserListService;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -62,9 +68,10 @@ public class UserListContoller {
             } else if (userListEntity.getPassword() == null) {
                 throw new SignInException("密码不能为空！");
             }
+            UserInfoTo to = new UserInfoTo();
             userListEntity = userListService.signIn(userListEntity.getEmail(), userListEntity.getPassword());
-            userListEntity.setPassword("");
-            session.setAttribute("userListEntity", userListEntity);
+            BeanUtils.copyProperties(userListEntity, to);
+            session.setAttribute("userListTo", to);
         } catch (SignInException e) {
             return R.error().putCode(JiJuanerException.SIGN_IN_EXCEPTION.getCode()).putMsg(e.getMessage());
         }
@@ -74,7 +81,7 @@ public class UserListContoller {
     @RequestMapping("/quit")
     public R quit(HttpSession session) {
         // 删除原有的登录信息
-        session.removeAttribute("userListEntity");
+        session.removeAttribute("userListTo");
         return R.ok().putMsg("退出登录成功");
     }
 
@@ -86,11 +93,21 @@ public class UserListContoller {
             }
             // TODO session 里面不应该存放 userName 等会变更的信息
             UserListEntity user = userListService.getById(UserInterceptor.toThreadLocal.get().getUserId());
-            user.setPassword("");
-            return R.ok().putData(user);
+            UserInfoTo to = new UserInfoTo();
+            BeanUtils.copyProperties(user, to);
+            return R.ok().putData(to);
         } catch (SignInException e) {
             return R.error().putCode(JiJuanerException.SIGN_IN_EXCEPTION.getCode()).putMsg(e.getMessage());
         }
+    }
+
+    @PostMapping("/getUserInfos")
+    public R getUserInfos(@RequestBody List<Integer> ids) {
+        if (ids.isEmpty()) {
+            return R.ok().putData(new ArrayList<String>());
+        }
+        List<UserListEntity> data = ids.stream().parallel().map(id -> userListService.getUserInfo(id)).toList();
+        return R.ok().putData(data);
     }
 
     @RequestMapping("/sendCode")
@@ -106,13 +123,13 @@ public class UserListContoller {
         return R.ok().putMsg("验证码已发送");
     }
 
-    private String emailRegex = "\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*";
+    private static final String EMAILREGEX = "\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*";
 
     private boolean testEmail(String email) {
         if (email == null) {
             return false;
         }
-        return email.matches(emailRegex);
+        return email.matches(EMAILREGEX);
     }
 
     @RequestMapping("/getOssPolicy")
@@ -128,7 +145,13 @@ public class UserListContoller {
     }
 
     @RequestMapping("/rename")
-    public R rename(String name) {
+    public R rename(@RequestParam("name") String name) {
+        name = name.trim();
+        if (!StringUtils.hasText(name)) {
+            return R.error().putMsg("名字中没有有效字符");
+        } else if (name.length() > 32) {
+            return R.error().putMsg("名字长度不能超过32个字符");
+        }
         userListService.rename(UserInterceptor.toThreadLocal.get().getUserId(), name);
         return R.ok().putMsg("重命名成功");
     }

@@ -4,12 +4,13 @@ import java.util.HashSet;
 import java.util.List;
 
 import com.yunzen.jijuaner.common.exception.JiJuanerException;
+import com.yunzen.jijuaner.common.interceptor.UserInterceptor;
+import com.yunzen.jijuaner.common.to.FundSimpleAndRealTimeInfoTo;
+import com.yunzen.jijuaner.common.to.UserInfoTo;
 import com.yunzen.jijuaner.common.utils.R;
 import com.yunzen.jijuaner.user.config.UserUtils;
-import com.yunzen.jijuaner.user.entity.UserListEntity;
 import com.yunzen.jijuaner.user.entity.UserOptionEntity;
 import com.yunzen.jijuaner.user.feign.FundFeignService;
-import com.yunzen.jijuaner.user.interceptor.UserInterceptor;
 import com.yunzen.jijuaner.user.service.UserOptionService;
 import com.yunzen.jijuaner.user.vo.UserOptionVo;
 
@@ -43,15 +44,17 @@ public class UserOptionContoller {
 
     @RequestMapping("/getGroups")
     public R getGroups() {
-        UserListEntity to = UserInterceptor.toThreadLocal.get();
+        UserInfoTo to = UserInterceptor.toThreadLocal.get();
         if (to == null) {
             return R.error().putCode(JiJuanerException.SIGN_IN_EXCEPTION.getCode()).putMsg("用户需要登录");
         }
-        List<UserOptionEntity> entities = userOptionService.getByUserId(to.getUserId(), "group_id", "group_name", "sort");
+        List<UserOptionEntity> entities = userOptionService.getByUserId(to.getUserId(), "group_id", "group_name",
+                "sort");
         if (entities == null || entities.isEmpty()) {
             return R.error().putCode(JiJuanerException.OPTION_GROUP_EXCEPTION.getCode()).putMsg("该用户尚未开通自选服务");
         }
-        entities.sort((e1, e2)-> Short.compare(e1.getSort(), e2.getSort()));
+
+        entities.sort((e1, e2) -> Short.compare(e1.getSort(), e2.getSort()));
         List<UserOptionVo> vos = entities.stream().map(entity -> {
             var vo = new UserOptionVo();
             BeanUtils.copyProperties(entity, vo);
@@ -62,19 +65,18 @@ public class UserOptionContoller {
 
     @RequestMapping("/getFunds")
     public R getFunds(@RequestParam("groupId") Integer groupId) {
-        UserOptionEntity entity = userOptionService.getByUserIdAndGroupId(UserInterceptor.toThreadLocal.get().getUserId(), groupId, "*");
+        UserOptionEntity entity = userOptionService
+                .getByUserIdAndGroupId(UserInterceptor.toThreadLocal.get().getUserId(), groupId, "*");
         List<String> funds = UserUtils.stringToStringList(entity.getFunds(), ",");
 
         var vo = new UserOptionVo();
         vo.setGroupId(groupId);
         vo.setFunds(funds);
-        R fundNamesR = fundFeignService.getNames(funds);
-        if (fundNamesR.getCode() == 0) {
-            @SuppressWarnings("unchecked")
-            List<String> fundNames = (List<String>) fundNamesR.getData();
-            vo.setFundNames(fundNames);
+        R infosR = fundFeignService.getSimpleAndRealTimeInfos(funds);
+        if (infosR.getCode() == 0) {
+            vo.setInfos((List<FundSimpleAndRealTimeInfoTo>) infosR.getData());
         } else {
-            return R.error().putMsg(fundNamesR.getMsg());
+            return R.error().putMsg(infosR.getMsg());
         }
         return R.ok().putData(vo);
     }
@@ -116,7 +118,6 @@ public class UserOptionContoller {
         return R.ok().putMsg("重命名分组成功！");
     }
 
-
     @RequestMapping("/addNewFunds")
     // userId=9&groupId=1&fundCode=000001
     public R addNewFunds(@RequestBody UserOptionVo vo) {
@@ -148,8 +149,9 @@ public class UserOptionContoller {
 
     // @RequestMapping("/editFund")
     // public R editFund(@RequestBody UserOptionVo vo) {
-    //     userOptionService.editFund(UserInterceptor.toThreadLocal.get().getUserId(), vo.getGroupId(),
-    //             vo.getFunds());
-    //     return R.ok().putMsg("编辑分组中的基金成功！");
+    // userOptionService.editFund(UserInterceptor.toThreadLocal.get().getUserId(),
+    // vo.getGroupId(),
+    // vo.getFunds());
+    // return R.ok().putMsg("编辑分组中的基金成功！");
     // }
 }

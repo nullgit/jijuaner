@@ -32,6 +32,7 @@ import com.yunzen.jijuaner.user.exception.SignInException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -39,10 +40,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.extern.slf4j.Slf4j;
-
 @Service("userListService")
-@Slf4j
 @RefreshScope
 public class UserListService extends ServiceImpl<UserListDao, UserListEntity> {
     @Autowired
@@ -84,6 +82,16 @@ public class UserListService extends ServiceImpl<UserListDao, UserListEntity> {
             throw new SignInException("密码错误！");
         }
         return record;
+    }
+
+    private static final String USER_ID = "user_id";
+    private static final String USER_NAME = "user_name";
+    private static final String HEAD_IMG = "head_img";
+
+    @Cacheable(cacheNames = "jijuaner:userList")
+    public UserListEntity getUserInfo(Integer id) {
+        return baseMapper
+                .selectOne(new QueryWrapper<UserListEntity>().eq(USER_ID, id).select(USER_ID, USER_NAME, HEAD_IMG));
     }
 
     private Properties emailProperties;
@@ -206,14 +214,19 @@ public class UserListService extends ServiceImpl<UserListDao, UserListEntity> {
 
     public void setHeadImg(Integer userId, String url) {
         UserListEntity entity = baseMapper
-                .selectOne(new QueryWrapper<UserListEntity>().select("user_id", "head_img").eq("user_id", userId));
+                .selectOne(new QueryWrapper<UserListEntity>().select(USER_ID, HEAD_IMG).eq(USER_ID, userId));
         String oldImg = entity.getHeadImg();
         entity.setHeadImg(url);
         baseMapper.updateById(entity);
-        ossClient.deleteObject(bucket, oldImg.replace("https://" + bucket + "." + endpoint + "/", ""));
+        if (oldImg != null) {
+            ossClient.deleteObject(bucket, oldImg.replace("https://" + bucket + "." + endpoint + "/", ""));
+        }
     }
 
     public void rename(Integer userId, String name) {
-        // TODO
+        UserListEntity entity = new UserListEntity();
+        entity.setUserId(userId);
+        entity.setUserName(name);
+        baseMapper.updateById(entity);
     }
 }

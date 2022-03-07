@@ -1,12 +1,8 @@
 package com.yunzen.jijuaner.user.config;
 
-import com.yunzen.jijuaner.user.interceptor.UserInterceptor;
+import com.yunzen.jijuaner.common.interceptor.UserInterceptor;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 

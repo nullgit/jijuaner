@@ -14,6 +14,9 @@ public interface JSDataFeignService {
     @RequestMapping("/jsdata/fund/info/{id}")
     public R getInfoById(@PathVariable("id") String id);
 
+    @RequestMapping("/jsdata/fund/realTime/{id}")
+    public R getRealTimeInfoById(@PathVariable("id") String id);
+
     @RequestMapping("/jsdata/index/list")
     public R getAllIndex();
 }

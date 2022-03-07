@@ -3,12 +3,17 @@ package com.yunzen.jijuaner.fund.entity;
 import java.io.Serializable;
 import java.util.List;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import lombok.Data;
 
 @Data
+@Document(collection = "fund_info")
 public class FundInfoEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    @Id
     private String fundCode;
     private String fundName;
     private String yieldOneYear;
@@ -17,6 +22,7 @@ public class FundInfoEntity implements Serializable {
     private String yieldOneMonth;
 
     private String fundType;
+    private Long saveTime;
 
     private List<AcWorth> acWorthTrend;
     private List<RankInSimilarType> ranksInSimilarType;

@@ -26,19 +26,19 @@ router.get("/list", async (ctx, next) => {
                     // 'fundNameAllSpell': fund[4],
                 })
             }
-            ctx.body = new R().ok().putData(JSON.stringify(body))
+            ctx.body = new R().ok().putData(body)
         })
         .catch((err) => {
-            console.log("出错了")
-            ctx.body = new R().error().putMsg(err)
+            console.log("/list 出错了")
+            ctx.body = new R().error().putMsg(err.toString())
         })
 })
 
-router.get("/info/:fund_code", async (ctx, next) => {
-    let fund_code = ctx.params.fund_code
-    console.log(`获取基金数据：${fund_code}`)
+router.get("/info/:fundCode", async (ctx, next) => {
+    let fundCode = ctx.params.fundCode
+    console.log(`获取基金数据：${fundCode}`)
     await axios
-        .get(`http://fund.eastmoney.com/pingzhongdata/${fund_code}.js?v=${Date.parse(new Date())}`)
+        .get(`http://fund.eastmoney.com/pingzhongdata/${fundCode}.js?v=${Date.parse(new Date())}`)
         .then((response) => {
             let dataCode = response.data
             // TODO 危险操作
@@ -143,6 +143,53 @@ router.get("/info/:fund_code", async (ctx, next) => {
                 .error()
                 .putCode(JiJuanerException.FUND_INFO_EXCEPTION.code)
                 .putMsg("该基金数据不存在或出错了~")
+        })
+})
+
+
+router.get("/realTime/:fundCode", async (ctx, next) => {
+    let fundCode = ctx.params.fundCode
+    console.log(`获取基金实时数据：${fundCode}`)
+    await axios
+        .get(`http://fundgz.1234567.com.cn/js/${fundCode}.js?rt=${new Date().getTime()}`)
+        .then((resp) => {
+            let resultStr = new String(resp.data)
+            let data = JSON.parse(resultStr.substring(8, resultStr.length - 2))
+            // "fundcode":"005827",  // 基金代码
+            // "name":"易方达蓝筹精选混合",  // 基金名字
+            // "jzrq":"2021-12-23",  // 截止日期
+            // "dwjz":"2.6359",  // 单位净值
+            // "gsz":"2.6478",  // 估算值
+            // "gszzl":"0.45",  // 估算增长率
+            // "gztime":"2021-12-24 15:00"  // 估值时间
+            data = {
+                fundCode: data.fundcode,
+                fundName: data.name,
+                netWorth: data.dwjz,
+                valuation: data.gsz,
+                valuationRate: data.gszzl,
+                valuationTime: data.gztime,
+                date: data.jzrq,
+            }
+            ctx.body = new R().ok().putData(data)
+        })
+        .catch((err) => {
+            console.log("出错了")
+            ctx.body = new R().error().putMsg(err.toString())
+        })
+})
+
+router.get("/evalImg/:fundCode", async (ctx, next) => {
+    let fundCode = ctx.params.fundCode
+    console.log(`获取基金估值图数据：${fundCode}`)
+    await axios
+        .get(`http://j4.dfcfw.com/charts/pic6/${fundCode}.png?v=${new Date().getTime()}`)
+        .then((resp) => {
+            ctx.body = new R().ok().putData(resp.data)
+        })
+        .catch((err) => {
+            console.log("出错了")
+            ctx.body = new R().error().putMsg(err.toString())
         })
 })
 

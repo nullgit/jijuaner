@@ -1,21 +1,36 @@
-# 鸡圈儿文档
+# 鸡圈儿
+
+<!-- 前端 app 启动 + jsdata 服务启动：
+```sh
+cd ./frontend/jijuaner-app/ && npm run dev
+cd ./backend/jijuaner-jsdata/ && npm run dev
+``` -->
 
 ## TODO
 
+使用 vuex 保存一些通用的信息
+
 自选功能：
-!! 通过基金id得到基金名字、涨跌幅、估值
 
 详情页功能：
 设置时间段
-设置参考指数
-(货币基金没有累计净值)
+设置参考指数（数据从韭圈获得）
+货币基金没有累计净值
 
-设置功能
+设置功能：
+忘记密码，重设密码
 
-指数估值
+评论功能：
+删除回复功能
+有人点赞、回复后向用户发送通知
+
+指数估值曲线（数据从韭圈获得）
 投资箴言
-(模拟投资)
+（模拟投资）
 （量化）
+文章发表
+系统消息
+恐贪指数（数据从韭圈获得）
 
 ## 整体设计
 
@@ -24,14 +39,16 @@
 登录
 搜索
 自选
+评论
 第三方服务
 
 使用技术：
-- springboot
-- springcloud
-- mysql
-- redis
-- nginx
+- SpringBoot
+- SpringCloud
+- MySQL
+- Redis
+- MongoDB
+- Nginx
 
 ### 微服务
 
@@ -40,176 +57,67 @@
 - jijuaner-fund:10000 基金信息服务
 - jijuaner-user:20000 用户服务
 - jijuaner-search:30000 搜索服务
+- jijuaner-search:40000 评论服务
 
 ## 接口设计
 
 ### 第三方接口
 
-#### 获取所有基金名称
+- 基金实时信息 `http://fundgz.1234567.com.cn/js/519983.js?rt=1463558676006`
+  - `519983`为基金代码
+  - `rt=1463558676006`为时间戳，避免缓存
+- 所有基金列表 `http://fund.eastmoney.com/js/fundcode_search.js`
+- 基金详细信息 `http://fund.eastmoney.com/pingzhongdata/005827.js?v=20160518155842`
+- 实时净值估算图 `http://j4.dfcfw.com/charts/pic6/000689.png?v=20220306141111`
+- 所有指数列表 `http://danjuanapp.com/djapi/index_eva/dj`
 
-`get http://fund.eastmoney.com/js/fundcode_search.js`
+### 微服务接口
 
-```json
-var r = [
-    ["000001","HXCZHH","华夏成长混合","混合型-偏股","HUAXIACHENGZHANGHUNHE"],
-    // 基金代码、基金名称单拼、基金名称中文、基金类型、基金名称全拼
-    ["000002","HXCZHH","华夏成长混合(后端)","混合型-偏股","HUAXIACHENGZHANGHUNHE"],
-    // ...
-]
-```
-
-#### 获取基金实时信息
-
-`http://fundgz.1234567.com.cn/js/519983.js?rt=1463558676006`
-
-- `519983`为基金代码
-- `rt=1463558676006`为时间戳，避免缓存
-
-```json
-jsonpgz({
-    "fundcode":"005827",  // 基金代码
-    "name":"易方达蓝筹精选混合",  // 基金名字
-    "jzrq":"2021-12-23",  // 截止日期
-    "dwjz":"2.6359",  // 单位净值
-    "gsz":"2.6478",  // 估算值
-    "gszzl":"0.45",  // 估算增长率
-    "gztime":"2021-12-24 15:00"  // 估值时间
-});
-```
+<!-- TODO -->
 
 ## 数据库设计
 
 ### 数据库设计概览
 
 MySQL：
-- fund 基金净值数据
-  - fund_list 所有基金列表
-- user 用户注册、登录信息
-  - user_list 用户列表
+- jijuaner_user 
+  - user_list 用户列表，包含用户注册、登录信息
   - user_option 用户自选基金
-- optical 自选基金
+
+MongoDB：
+- jijuaner_fund
+  - fund_list 所有基金列表
+  - fund_info 基金详情信息
+- jijuaer_comment
+  - fund_comment 对基金的评论
+  - fund_comment_reply 对评论的回复
 
 Redis：
-- session
-- fund 基金净值数据缓存、基金估值数据缓存
-  - fundList::getAll 全部基金的列表缓存
-  - fundInfo:fundCode 对应基金的全部信息
-    - fundInfo:fundCode:time 上一次获取对应基金的时间
-  - indexList::getAll 全部指数的列表缓存
-  - indexInfo:indexCode 对应指数的全部信息
-    - indexInfo:indexCode:time 上一次获取对应指数的时间
-- user 用户
-  - allOptionFunds:userId 对应用户的全部自选基金
+- spring:session
+- jijuaner(fund)
+  - fundList::getAll 全部基金列表的缓存
+  - fundInfo::\<fundCode> 对应基金详情信息缓存
+  - fundSimpleInfo::\<fundCode> 对应基金简单信息的缓存
+  - fundType::\<fundCode> 对应基金类型缓存
+  - indexList::getAll 全部指数列表的缓存
+  - indexInfo:indexCode 指数列表
+    - indexInfo:indexCode:time 上一次获取指数列表的时间
+- jijuaner(user)
+  - code:\<userId> 用户的验证码
+  - allOptionFunds:\<userId> 对应用户的全部自选基金
 
 es：
 - jijuaner_fundlist 所有基金列表
 
 ### jijuaner_fund
 
-```sql
-CREATE DATABASE `jijuaner_fund` DEFAULT CHARACTER SET = 'utf8mb4';
-```
+#### fund_list (MongoDB)
 
-#### fund_list (MySQL)
-
-- fund_code 主键 基金代码
-- fund_name 基金名称中文
-- fund_type 基金类型
-
-```sql
-CREATE TABLE fund_list(
-    fund_code VARCHAR(10) PRIMARY KEY COMMENT '基金代码',
-    fund_name VARCHAR(64) COMMENT '基金名称中文',
-    fund_type VARCHAR(16) COMMENT '基金类型'
-) ENGINE=INNODB DEFAULT CHARSET=UTF8 COMMENT '所有基金列表';
-```
-
-#### fundList::getAll (Redis)
-
-对 fundList 进行缓存
-
-#### fundName (Redis)
-
-对 fundList 中的 fundName 进行缓存
-
-#### fundInfo (Redis)
-
-fundInfo:fundCode 是基金信息的缓存，如果 fundInfo:fundCode:time 的时间已过去 6 个小时，则需要从 jsdata 服务中重新获取
-
-- fundCode 主键 基金代码
-- fundName 基金名称
-- yieldOneYear 近一年收益率
-- yieldSixMonths 近六个月收益率
-- yieldThreeMonths 近三个月收益率
-- yieldOneMonth 近一个月收益率
+- _id(fundCode) 主键 基金代码
+- fundName 基金名称中文
 - fundType 基金类型
-- acWorthTrend 成立以来累计净值走势
-  - x 时间戳（微秒）
-  - y 累计净值
-- ranksInSimilarType 同类排名
-  - x 时间戳（微秒）
-  - y 排名
-  - total 同类总数
-- currentManagers
-  - managerId 经理代码
-  - pic 经理图片
-  - name 经理名字
-  - workTime 从业年限
-  - fundSize 在管规模
-- scales
-  - x 日期字符串
-  - y 表示规模的字符串
 
-#### indexList 
-
-### jijuaner_user
-
-```sql
-CREATE DATABASE `jijuaner_user` DEFAULT CHARACTER SET = 'utf8mb4';
-```
-
-#### user_list (MySQL)
-
-- user_id 主键 自增 用户 id
-- user_name 用户名称
-- email 邮箱
-- password 密码
-<!-- TODO --> 
-- head_img 头像链接
-
-```sql
-CREATE TABLE user_list(
-    `user_id` INT(11) PRIMARY KEY AUTO_INCREMENT COMMENT '主键 用户id',
-    `user_name` VARCHAR(32) COMMENT '用户名称',
-    `email` VARCHAR(64) UNIQUE COMMENT '邮箱',
-    `password` VARCHAR(128) COMMENT '密码',
-    `head_img` VARCHAR(256) COMMENT '头像链接'
-) ENGINE=INNODB DEFAULT CHARSET=UTF8 AUTO_INCREMENT=1 COMMENT '所有用户列表';
-```
-
-#### user_option (MySQL)
-
-- group_id 分组 id
-- user_id 用户 id
-- sort 排序
-- group_name 分组名称
-- funds 基金 id 列表
-
-```sql
-CREATE TABLE user_option(
-    `group_id` INT(11) PRIMARY KEY AUTO_INCREMENT COMMENT '分组id',
-    `user_id` INT(11) NOT NULL COMMENT '用户id', -- 需要建索引
-    `sort` TINYINT(3) NOT NULL COMMENT '排序',
-    `group_name` VARCHAR(10) COMMENT '分组名称',
-    `funds` TEXT COMMENT '分组中的基金id列表'
-) ENGINE=INNODB DEFAULT CHARSET=UTF8 AUTO_INCREMENT=1 COMMENT '用户自选基金分组信息';
-```
-
-#### allOptionFunds (Redis)
-
-jijuaner:allOptionFunds:userId 数据结构为 set，set 中是全部自选基金代码
-
-### jijuaner_fundlist (ES)
+#### jijuaner_fundlist (ES)
 
 ```es
 PUT jijuaner_fundlist
@@ -238,17 +146,152 @@ PUT jijuaner_fundlist
 }
 ```
 
+#### fund_info (MongoDB)
+
+fundInfo:fundCode 是基金信息的缓存，如果 fundInfo:fundCode:time 的时间已过去 6 个小时，则需要从 jsdata 服务中重新获取
+
+- fundCode 主键 基金代码
+- fundName 基金名称
+- yieldOneYear 近一年收益率
+- yieldSixMonths 近六个月收益率
+- yieldThreeMonths 近三个月收益率
+- yieldOneMonth 近一个月收益率
+- fundType 基金类型
+- acWorthTrend 成立以来累计净值走势
+  - x 时间戳（微秒）
+  - y 累计净值
+- ranksInSimilarType 同类排名
+  - x 时间戳（微秒）
+  - y 排名
+  - total 同类总数
+- currentManagers
+  - managerId 经理代码
+  - pic 经理图片
+  - name 经理名字
+  - workTime 从业年限
+  - fundSize 在管规模
+- scales
+  - x 日期字符串
+  - y 表示规模的字符串
+
+#### indexList (Redis)
+
+- id
+- indexCode 指数代码
+- indexName 指数名称
+- pe PE
+- pb PB
+- pePercentile PE百分位
+- pbPercentile PB百分位
+- roe ROE
+- yield 股息率
+- peg PEG
+- pbFlag PB估值是否适用
+- evalType 估值情况
+
+### jijuaner_user
+
+#### user_list (MySQL)
+
+```sql
+CREATE TABLE user_list(
+    `user_id` INT(11) PRIMARY KEY AUTO_INCREMENT COMMENT '主键 用户id',
+    `user_name` VARCHAR(32) COMMENT '用户名称',
+    `email` VARCHAR(64) UNIQUE COMMENT '邮箱',
+    `password` VARCHAR(128) COMMENT '密码',
+    `head_img` VARCHAR(256) COMMENT '头像链接'
+) ENGINE=INNODB DEFAULT CHARSET=UTF8 AUTO_INCREMENT=1 COMMENT '所有用户列表';
+```
+
+#### user_option (MySQL)
+
+```sql
+CREATE TABLE user_option(
+    `group_id` INT(11) PRIMARY KEY AUTO_INCREMENT COMMENT '分组id',
+    `user_id` INT(11) NOT NULL COMMENT '用户id', -- 需要建索引
+    `sort` TINYINT(3) NOT NULL COMMENT '排序',
+    `group_name` VARCHAR(10) COMMENT '分组名称',
+    `funds` TEXT COMMENT '分组中的基金id列表'
+) ENGINE=INNODB DEFAULT CHARSET=UTF8 AUTO_INCREMENT=1 COMMENT '用户自选基金分组信息';
+```
+
+#### allOptionFunds (Redis)
+
+jijuaner:allOptionFunds:\<userId> 数据结构为 set，set 中是对应用户全部自选基金代码
+
+### jijuaner_comment
+
+#### fund_comment (Mongodb)
+
+- id
+- fundCode 对哪只基金评论
+- userId 用户id
+- time 评论时间
+- content 评论内容
+- likes 点赞数
+- replyNum 回复数
+- likeUsers 点赞的用户集合
+
+#### fund_comment_reply (MongoDB)
+
+- id
+- userId 用户id
+- toCommentId 对哪个评论回复
+- time 回复时间
+- content 回复内容
+- likes 点赞数
+- replyNum 回复数
+- likeUsers 点赞的用户集合
+- replyL2 二级回复
+  - toUserId 对哪个用户回复
+  - userId 用户id
+  - time 回复时间
+  - content 回复内容
+
+### jijuaner_notice
+
+<!-- TODO -->
+
 ## 前端 app 设计
 
-- 头栏：logo、搜索框
-- 底栏：首页、自选、我的
+### 首页
 
-- 首页：头栏、特色功能
-- 自选：分类栏、列表（预估净值、净值）
-- 基金页面：简介、收益曲线
-- 我的：个人信息框、设置
+#### 主页
 
 ![](./img/home.jpg)
+
+#### 自选
+
 ![](./img/option.jpg)
-![](./img/option.jpg)
+
+#### 我的
+
+![](./img/my.jpg)
+
+### 搜索
+
+![](./img/search.jpg)
+
+### 信息
+
 ![](./img/info.jpg)
+
+### 用户管理
+
+#### 登录和注册
+
+![](./img/signIn.jpg)
+
+#### 设置
+
+![](./img/setting.jpg)
+
+### 评论
+
+#### 评论列表
+
+![](./img/comments.jpg)
+
+#### 全部回复
+
+![](./img/replys.jpg)

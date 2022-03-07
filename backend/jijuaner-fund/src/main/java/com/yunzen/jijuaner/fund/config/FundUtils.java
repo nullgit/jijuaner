@@ -8,6 +8,10 @@ import org.springframework.data.redis.core.ValueOperations;
 
 
 public class FundUtils {
+    private FundUtils() {
+
+    }
+
     public static String getRedisKeyIfInValidTime(ValueOperations<String, String> opsForValue, String timeKey, String key,
             LocalDateTime after) {
         String timeJSON = opsForValue.get(timeKey);
@@ -19,4 +23,6 @@ public class FundUtils {
         }
         return null;
     }
+
+    // public stat
 }

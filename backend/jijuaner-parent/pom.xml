@@ -16,6 +16,7 @@
         <module>../jijuaner-user</module>
         <module>../jijuaner-search</module>
         <module>../jijuaner-gateway</module>
+        <module>../jijuaner-comment</module>
     </modules>
 
     <parent>
