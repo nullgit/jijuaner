@@ -3,11 +3,12 @@ package com.yunzen.jijuaner.user.controller;
 import java.util.HashSet;
 import java.util.List;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.yunzen.jijuaner.common.exception.JiJuanerException;
-import com.yunzen.jijuaner.common.interceptor.UserInterceptor;
 import com.yunzen.jijuaner.common.to.FundSimpleAndRealTimeInfoTo;
-import com.yunzen.jijuaner.common.to.UserInfoTo;
 import com.yunzen.jijuaner.common.utils.R;
+import com.yunzen.jijuaner.common.utils.SignInUtils;
 import com.yunzen.jijuaner.user.config.UserUtils;
 import com.yunzen.jijuaner.user.entity.UserOptionEntity;
 import com.yunzen.jijuaner.user.feign.FundFeignService;
@@ -16,7 +17,6 @@ import com.yunzen.jijuaner.user.vo.UserOptionVo;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -36,25 +36,29 @@ public class UserOptionContoller {
     @Autowired
     private FundFeignService fundFeignService;
 
+    /**
+     * 开启自选分组功能
+     *
+     * @see UserOptionService#enableOption(Integer)
+     */
     @RequestMapping("/enableOption")
     public R enableOption() {
-        userOptionService.enableOption(UserInterceptor.toThreadLocal.get().getUserId());
+        userOptionService.enableOption(SignInUtils.getUserId());
         return R.ok().putMsg("开通基金自选功能成功！");
     }
 
+    /**
+     * 获取该用户已经创建的分组
+     */
     @RequestMapping("/getGroups")
     public R getGroups() {
-        UserInfoTo to = UserInterceptor.toThreadLocal.get();
-        if (to == null) {
-            return R.error().putCode(JiJuanerException.SIGN_IN_EXCEPTION.getCode()).putMsg("用户需要登录");
-        }
-        List<UserOptionEntity> entities = userOptionService.getByUserId(to.getUserId(), "group_id", "group_name",
-                "sort");
-        if (entities == null || entities.isEmpty()) {
-            return R.error().putCode(JiJuanerException.OPTION_GROUP_EXCEPTION.getCode()).putMsg("该用户尚未开通自选服务");
+        List<UserOptionEntity> entities = userOptionService.getByUserId(SignInUtils.getUserId(), "group_id",
+                "group_name", "sort");
+        if (entities.isEmpty()) {
+            throw JiJuanerException.OPTION_EXCEPTION.putMessage("该用户尚未开通自选服务");
         }
 
-        entities.sort((e1, e2) -> Short.compare(e1.getSort(), e2.getSort()));
+        entities.sort((e1, e2) -> Byte.compare(e1.getSort(), e2.getSort()));
         List<UserOptionVo> vos = entities.stream().map(entity -> {
             var vo = new UserOptionVo();
             BeanUtils.copyProperties(entity, vo);
@@ -63,11 +67,15 @@ public class UserOptionContoller {
         return R.ok().putData(vos);
     }
 
+    /**
+     * 获取该用户某分组的基金
+     */
     @RequestMapping("/getFunds")
     public R getFunds(@RequestParam("groupId") Integer groupId) {
         UserOptionEntity entity = userOptionService
-                .getByUserIdAndGroupId(UserInterceptor.toThreadLocal.get().getUserId(), groupId, "*");
-        List<String> funds = UserUtils.stringToStringList(entity.getFunds(), ",");
+                .getByUserIdAndGroupId(SignInUtils.getUserId(), groupId, "*");
+        List<String> funds = JSON.parseObject(entity.getFunds(), new TypeReference<List<String>>() {
+        });
 
         var vo = new UserOptionVo();
         vo.setGroupId(groupId);
@@ -81,75 +89,86 @@ public class UserOptionContoller {
         return R.ok().putData(vo);
     }
 
+    /**
+     * 判断一个基金是否被一个用户自选
+     *
+     * @see UserOptionService#isOptional(Integer, String)
+     */
     @RequestMapping("/isOptional")
     public R isOptional(@RequestParam("fundCode") String fundCode) {
-        Boolean isOptional = userOptionService.isOptional(UserInterceptor.toThreadLocal.get().getUserId(), fundCode);
+        Boolean isOptional = userOptionService.isOptional(SignInUtils.getUserId(), fundCode);
         return R.ok().putData(isOptional);
     }
 
-    private String groupNameValidator(String groupName) {
-        if (!StringUtils.hasText(groupName)) {
-            return "分组名称不能为空！";
-        } else if (groupName.length() > 6) {
-            return "分组名称字符不能超过6！";
-        }
-        return null;
-    }
-
+    /**
+     * 新增一个分组
+     *
+     * @see UserOptionContoller#addNewGroup(String)
+     */
     @RequestMapping("/addNewGroup")
     public R addNewGroup(@RequestParam("groupName") String groupName) {
-        groupName = groupName.trim();
-        String msg = groupNameValidator(groupName);
-        if (msg != null) {
-            return R.error().putMsg(msg);
-        }
-        userOptionService.addNewGroup(UserInterceptor.toThreadLocal.get().getUserId(), groupName);
+        userOptionService.addNewGroup(SignInUtils.getUserId(), groupName);
         return R.ok().putMsg("添加分组成功！");
     }
 
+    /**
+     * 重命名一个分组
+     *
+     * @see UserOptionService#renameGroup(Integer, Integer, String)
+     */
     @RequestMapping("/renameGroup")
     public R renameGroup(@RequestParam("groupId") Integer groupId, @RequestParam("groupName") String groupName) {
-        groupName = groupName.trim();
-        String msg = groupNameValidator(groupName);
-        if (msg != null) {
-            return R.error().putMsg(msg);
-        }
-        userOptionService.renameGroup(UserInterceptor.toThreadLocal.get().getUserId(), groupId, groupName);
+        userOptionService.renameGroup(SignInUtils.getUserId(), groupId, groupName);
         return R.ok().putMsg("重命名分组成功！");
     }
 
     @RequestMapping("/addNewFunds")
     // userId=9&groupId=1&fundCode=000001
     public R addNewFunds(@RequestBody UserOptionVo vo) {
-        userOptionService.addNewFunds(UserInterceptor.toThreadLocal.get().getUserId(), vo.getGroupId(),
+        userOptionService.addNewFunds(SignInUtils.getUserId(), vo.getGroupId(),
                 vo.getFunds());
         return R.ok().putMsg("添加基金成功！");
     }
 
+    /**
+     * 删除用户的某一个分组
+     *
+     * @see UserOptionService#delGroup(Integer, Integer)
+     */
     @RequestMapping("/delGroup")
     public R delGroup(@RequestParam("groupId") Integer groupId) {
-        userOptionService.delGroup(UserInterceptor.toThreadLocal.get().getUserId(), groupId);
+        userOptionService.delGroup(SignInUtils.getUserId(), groupId);
         return R.ok().putMsg("删除分组成功！");
     }
 
+    /**
+     * 向某一个分组删除一组基金
+     *
+     * @see UserOptionService#delFunds(Integer, Integer, java.util.Set)
+     */
     @RequestMapping("/delFunds")
     public R delFunds(@RequestBody UserOptionVo vo) {
         var fundSet = new HashSet<String>();
         fundSet.addAll(vo.getFunds());
-        userOptionService.delFunds(UserInterceptor.toThreadLocal.get().getUserId(), vo.getGroupId(),
+        userOptionService.delFunds(SignInUtils.getUserId(), vo.getGroupId(),
                 fundSet);
         return R.ok().putMsg("删除分组中的对应基金成功！");
     }
 
+    /**
+     * 交换两个分组的位置
+     *
+     * @see UserOptionService#swapGroup(Integer, Byte, Byte)
+     */
     @RequestMapping("/swapGroup")
-    public R swapGroup(@RequestParam("idx1") Short idx1, @RequestParam("idx2") Short idx2) {
-        userOptionService.swapGroup(UserInterceptor.toThreadLocal.get().getUserId(), idx1, idx2);
+    public R swapGroup(@RequestParam("idx1") Byte idx1, @RequestParam("idx2") Byte idx2) {
+        userOptionService.swapGroup(SignInUtils.getUserId(), idx1, idx2);
         return R.ok().putMsg("交换分组成功！");
     }
 
     // @RequestMapping("/editFund")
     // public R editFund(@RequestBody UserOptionVo vo) {
-    // userOptionService.editFund(UserInterceptor.toThreadLocal.get().getUserId(),
+    // userOptionService.editFund(SignInUtils.getUserId(),
     // vo.getGroupId(),
     // vo.getFunds());
     // return R.ok().putMsg("编辑分组中的基金成功！");

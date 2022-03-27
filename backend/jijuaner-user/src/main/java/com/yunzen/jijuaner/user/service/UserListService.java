@@ -7,7 +7,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 
 import javax.annotation.Resource;
 import javax.mail.Message;
@@ -24,11 +23,11 @@ import com.aliyun.oss.model.PolicyConditions;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sun.mail.util.MailSSLSocketFactory;
+import com.yunzen.jijuaner.common.exception.JiJuanerException;
 import com.yunzen.jijuaner.common.utils.JiJuanerConstantString;
+import com.yunzen.jijuaner.user.config.UserUtils;
 import com.yunzen.jijuaner.user.dao.UserListDao;
 import com.yunzen.jijuaner.user.entity.UserListEntity;
-import com.yunzen.jijuaner.user.exception.LoginException;
-import com.yunzen.jijuaner.user.exception.SignInException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,31 +38,57 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service("userListService")
 @RefreshScope
 public class UserListService extends ServiceImpl<UserListDao, UserListEntity> {
+    private static final String USER_ID = "user_id";
+    private static final String USER_NAME = "user_name";
+    private static final String HEAD_IMG = "head_img";
+    private static final String EMAIL = "email";
+
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Autowired
-    private StringRedisTemplate stringRedisTemplate;
+    private StringRedisTemplate redis;
 
+    /**
+     * 注册
+     */
     @Transactional
-    public void login(UserListEntity userListEntity, String code) throws LoginException {
+    public void login(UserListEntity userListEntity, String code) {
+        String message = null;
+        if (userListEntity.getEmail() == null) {
+            message = "邮箱账号不能为空";
+        } else if (!UserUtils.testEmail(userListEntity.getEmail())) {
+            message = "邮箱格式不正确";
+        } else if (userListEntity.getPassword() == null) {
+            message = "密码不能为空";
+        } else if (userListEntity.getPassword().length() < 6) {
+            message = "密码需要至少6位数";
+        } else if (code == null) {
+            message = "验证码不能为空";
+        }
+        if (message != null) {
+            throw JiJuanerException.VALID_EXCEPTION.putMessage(message);
+        }
+
+        // TODO 防止验证码在60s内反复提交
         String key = JiJuanerConstantString.VERIFICATION_CODE.getConstant() + userListEntity.getEmail();
-        String realCode = stringRedisTemplate.opsForValue().get(key);
+        String realCode = redis.opsForValue().get(key);
         // 验证验证码
         if (realCode != null && realCode.equals(code)) {
-            stringRedisTemplate.delete(key);
+            redis.delete(key);
         } else {
-            throw new LoginException("验证码不正确或已过期！");
+            throw JiJuanerException.LOGIN_EXCEPTION.putMessage("验证码不正确或已过期");
         }
 
         Integer emailCount = baseMapper
-                .selectCount(new QueryWrapper<UserListEntity>().eq("email", userListEntity.getEmail()));
+                .selectCount(new QueryWrapper<UserListEntity>().eq(EMAIL, userListEntity.getEmail()));
         if (emailCount != 0) {
-            throw new LoginException("该邮箱已注册过账号！");
+            throw JiJuanerException.LOGIN_EXCEPTION.putMessage("该邮箱已注册过账号");
         }
 
         String encode = bCryptPasswordEncoder.encode(userListEntity.getPassword());
@@ -71,35 +96,55 @@ public class UserListService extends ServiceImpl<UserListDao, UserListEntity> {
         baseMapper.insert(userListEntity);
     }
 
-    public UserListEntity signIn(String email, String password) throws SignInException {
-        UserListEntity record = baseMapper
-                .selectOne(new QueryWrapper<UserListEntity>().eq("email", email));
-        if (record == null) {
-            throw new SignInException("邮箱账号不存在，请注册！");
+    /**
+     * 登录
+     */
+    public UserListEntity signIn(String email, String password) {
+        String message = null;
+        if (email == null) {
+            message = "邮箱账号不能为空";
+        } else if (password == null) {
+            message = "密码不能为空";
+        }
+        if (message != null) {
+            throw JiJuanerException.VALID_EXCEPTION.putMessage(message);
         }
 
-        if (!bCryptPasswordEncoder.matches(password, record.getPassword())) {
-            throw new SignInException("密码错误！");
+        UserListEntity entity = baseMapper
+                .selectOne(new QueryWrapper<UserListEntity>().eq(EMAIL, email));
+        if (entity == null) {
+            throw JiJuanerException.SIGN_IN_EXCEPTION.putMessage("邮箱账号不存在, 请注册");
         }
-        return record;
+
+        if (!bCryptPasswordEncoder.matches(password, entity.getPassword())) {
+            throw JiJuanerException.SIGN_IN_EXCEPTION.putMessage("密码错误");
+        }
+        return entity;
     }
 
-    private static final String USER_ID = "user_id";
-    private static final String USER_NAME = "user_name";
-    private static final String HEAD_IMG = "head_img";
-
+    /**
+     * 获取用户的信息(用户id, 用户名, 头像)
+     */
     @Cacheable(cacheNames = "jijuaner:userList")
     public UserListEntity getUserInfo(Integer id) {
         return baseMapper
                 .selectOne(new QueryWrapper<UserListEntity>().eq(USER_ID, id).select(USER_ID, USER_NAME, HEAD_IMG));
     }
 
-    private Properties emailProperties;
+    private static Properties emailProperties;
+    @Value("${config.email.server}")
+    public String emailServer;
+    @Value("${config.email.account}")
+    public String emailAccount;
+    @Value("${config.email.authcode}")
+    public String emailAuthcode;
+    @Value("${config.email.from}")
+    public String emailFrom;
 
     public UserListService() throws GeneralSecurityException {
         emailProperties = new Properties();
-        // TODO 开启debug调试，以便在控制台查看
-        emailProperties.setProperty("mail.debug", "true");
+        // 开启debug调试，以便在控制台查看
+        // emailProperties.setProperty("mail.debug", "true");
         // 设置邮件服务器主机名
         emailProperties.setProperty("mail.host", "smtp.qq.com");
         // 发送服务器需要身份验证
@@ -113,50 +158,40 @@ public class UserListService extends ServiceImpl<UserListDao, UserListEntity> {
         emailProperties.put("mail.smtp.ssl.socketFactory", sf);
     }
 
+    /**
+     * 向 email 发送验证码
+     */
     public void sendCode(String email) throws MessagingException {
+        if (!UserUtils.testEmail(email)) {
+            throw JiJuanerException.VALID_EXCEPTION.putMessage("邮箱格式不正确");
+        }
+
         // 创建session
         Session session = Session.getInstance(emailProperties);
         // 通过session得到transport对象
         Transport ts = session.getTransport();
-        // 连接邮件服务器：邮箱类型，帐号，POP3/SMTP协议授权码 163使用：smtp.163.com
         // ts.connect("smtp.qq.com", "发送方的QQ号", "POP3/SMTP协议授权码");
-        // xeyxxxxxxxxx
-        ts.connect("smtp.qq.com", "2450264253", "");
+        ts.connect(emailServer, emailAccount, emailAuthcode);
 
         // 创建邮件对象
         MimeMessage message = new MimeMessage(session);
         // 指明邮件的发件人
-        message.setFrom(new InternetAddress("2450264253@qq.com"));
+        message.setFrom(new InternetAddress(emailFrom));
         // 指明邮件的收件人，发件人和收件人如果是一样的，那就是自己给自己发
         message.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
         // 邮件的标题
         message.setSubject("鸡圈儿验证码");
         // 邮件的文本内容
-        String code = getCode();
-        message.setContent("【鸡圈儿】账号注册验证码为（5分钟有效）：" + code
-                + "，请勿回复此邮箱", "text/html;charset=UTF-8");
+        String code = UserUtils.getCode();
+        message.setContent("[鸡圈儿] 账号注册验证码为(5分钟有效): " + code
+                + ", 请勿回复此邮箱.", "text/html;charset=UTF-8");
         // 发送邮件
         ts.sendMessage(message, message.getAllRecipients());
         ts.close();
 
-        // Redis保存邮件+验证码
-        ValueOperations<String, String> opsForValue = stringRedisTemplate.opsForValue();
+        // Redis 保存邮件 + 验证码
+        ValueOperations<String, String> opsForValue = redis.opsForValue();
         opsForValue.set(JiJuanerConstantString.VERIFICATION_CODE.getConstant() + email, code, Duration.ofMinutes(5));
-    }
-
-    private String[] letters = new String[] { "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "a", "s", "d", "f", "g",
-            "h", "j", "k", "l", "z", "x", "c", "v", "b", "n", "m", "A", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
-            "A", "S", "D", "F", "G", "H", "J", "K", "L", "Z", "X", "C", "V", "B", "N", "M", "0", "1", "2", "3", "4",
-            "5", "6", "7", "8", "9" };
-
-    private Random random = new Random();
-
-    private String getCode() {
-        var sb = new StringBuilder();
-        for (int i = 0; i < 6; i++) {
-            sb = sb.append(letters[random.nextInt(0, letters.length)]);
-        }
-        return sb.toString();
     }
 
     @Resource
@@ -168,6 +203,9 @@ public class UserListService extends ServiceImpl<UserListDao, UserListEntity> {
     @Value("${spring.cloud.alicloud.access-key}")
     private String accessId;
 
+    /**
+     * 获取云存储服务的 policy
+     */
     public Map<String, String> getOssPolicy() {
         String host = "https://" + bucket + "." + endpoint; // host 的格式为 bucketname.endpoint
         // callbackUrl 为上传回调服务器的 URL，请将下面的 IP 和 Port 配置为您自己的真实信息。
@@ -218,12 +256,26 @@ public class UserListService extends ServiceImpl<UserListDao, UserListEntity> {
         String oldImg = entity.getHeadImg();
         entity.setHeadImg(url);
         baseMapper.updateById(entity);
-        if (oldImg != null) {
+        if (oldImg != null) { // 删除原来的头像
             ossClient.deleteObject(bucket, oldImg.replace("https://" + bucket + "." + endpoint + "/", ""));
         }
     }
 
+    /**
+     * 用户重命名
+     */
     public void rename(Integer userId, String name) {
+        name = name.trim();
+        String message = null;
+        if (!StringUtils.hasText(name)) {
+            message = "名字中没有有效字符";
+        } else if (name.length() > 32) {
+            message = "名字长度不能超过32个字符";
+        }
+        if (message != null) {
+            throw JiJuanerException.VALID_EXCEPTION.putMessage(message);
+        }
+
         UserListEntity entity = new UserListEntity();
         entity.setUserId(userId);
         entity.setUserName(name);

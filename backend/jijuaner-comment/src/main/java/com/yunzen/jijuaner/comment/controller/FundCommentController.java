@@ -1,7 +1,6 @@
 package com.yunzen.jijuaner.comment.controller;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import com.yunzen.jijuaner.comment.entity.FundCommentEntity;
@@ -10,8 +9,8 @@ import com.yunzen.jijuaner.comment.entity.FundCommentReplyL1Entity.FundCommentRe
 import com.yunzen.jijuaner.comment.service.FundCommentService;
 import com.yunzen.jijuaner.comment.vo.FundCommentReplyL1Vo;
 import com.yunzen.jijuaner.comment.vo.FundCommentVo;
-import com.yunzen.jijuaner.common.interceptor.UserInterceptor;
 import com.yunzen.jijuaner.common.utils.R;
+import com.yunzen.jijuaner.common.utils.SignInUtils;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,32 +33,45 @@ public class FundCommentController {
         return "hello, fund comment!";
     }
 
+    /**
+     * 用户发表对某一基金的评论
+     *
+     * @see FundCommentService#addComment(FundCommentEntity)
+     */
     @PostMapping("/addComment")
-    public R addComment(@RequestBody FundCommentEntity vo) {
-        vo.setUserId(UserInterceptor.toThreadLocal.get().getUserId());
-        vo.setTime(System.currentTimeMillis());
-        vo.setLikes(0);
-        vo.setReplyNum(0);
-        vo.setLikeUsers(new HashMap<>());
-        fundCommentService.addComment(vo);
+    public R addComment(@RequestBody FundCommentEntity to) {
+        fundCommentService.addComment(to);
         return R.ok().putMsg("评论发表成功");
     }
 
+    /**
+     * 将评论数据转化为 vo, 可以加上该用户是否对某条评论点赞
+     */
     private FundCommentVo fundCommentEntityToVo(FundCommentEntity entity, boolean needSomeReply) {
         var vo = new FundCommentVo();
         BeanUtils.copyProperties(entity, vo);
         vo.setHasLiked(
-                fundCommentService.hasLiked(entity.getId(), UserInterceptor.toThreadLocal.get().getUserId(), (byte) 0));
+                fundCommentService.hasLiked(entity.getId(), SignInUtils.getUserId(), (byte) 0));
         vo.setSomeReply(needSomeReply ? fundCommentService.getReplyL1Page(entity.getId(), 0, 2) : new ArrayList<>());
         return vo;
     }
 
+    /**
+     * 获得某一条评论
+     *
+     * @see FundCommentService#getCommentById(String)
+     */
     @GetMapping("/getComment/{id}")
     public R getCommentById(@PathVariable("id") String id) {
         FundCommentEntity entity = fundCommentService.getCommentById(id);
         return R.ok().putData(fundCommentEntityToVo(entity, false));
     }
 
+    /**
+     * 获得评论页
+     *
+     * @see FundCommentService#getCommentPage(String, Integer, Integer)
+     */
     @GetMapping("/getCommentPage")
     public R getCommentPage(@RequestParam("id") String fundCode, @RequestParam("page") Integer page,
             @RequestParam("size") Integer size) {
@@ -67,21 +79,25 @@ public class FundCommentController {
         return R.ok().putData(data.stream().map(entity -> fundCommentEntityToVo(entity, true)).toList());
     }
 
+    /**
+     * 回复评论
+     *
+     * @see FundCommentService#replyToComment(FundCommentReplyL1Entity)
+     */
     @PostMapping("/replyComment")
-    public R replyToComment(@RequestBody FundCommentReplyL1Entity vo) {
-        vo.setUserId(UserInterceptor.toThreadLocal.get().getUserId());
-        vo.setTime(System.currentTimeMillis());
-        vo.setLikes(0);
-        vo.setReplyL2(new ArrayList<>());
-        fundCommentService.replyToComment(vo);
+    public R replyToComment(@RequestBody FundCommentReplyL1Entity to) {
+        fundCommentService.replyToComment(to);
         return R.ok().putMsg("回复评论成功");
     }
 
+    /**
+     * 将回复数据转化为 vo, 可以加上该用户是否对某条回复点赞
+     */
     private FundCommentReplyL1Vo fundCommentReplyEntityToVo(FundCommentReplyL1Entity entity) {
         var vo = new FundCommentReplyL1Vo();
         BeanUtils.copyProperties(entity, vo);
         vo.setHasLiked(
-                fundCommentService.hasLiked(entity.getId(), UserInterceptor.toThreadLocal.get().getUserId(), (byte) 1));
+                fundCommentService.hasLiked(entity.getId(), SignInUtils.getUserId(), (byte) 1));
         vo.setSomeReply(entity.getReplyL2().stream().map(l2entity -> {
             var l2vo = new com.yunzen.jijuaner.comment.vo.FundCommentReplyL1Vo.FundCommentReplyL2();
             BeanUtils.copyProperties(l2entity, l2vo);
@@ -90,6 +106,11 @@ public class FundCommentController {
         return vo;
     }
 
+    /**
+     * 获得回复页
+     *
+     * @see FundCommentService#getReplyL1Page(String, Integer, Integer)
+     */
     @GetMapping("/getReplyL1Page")
     public R getReplyL1Page(@RequestParam("id") String commentId, @RequestParam("page") Integer page,
             @RequestParam("size") Integer size) {
@@ -98,22 +119,26 @@ public class FundCommentController {
     }
 
     /**
-     * 如果该用户已经点赞，则取消赞；如果没点赞，则加上赞
+     * 如果该用户已经点赞, 则取消赞; 如果没点赞, 则加上赞
      *
-     * @param commentLevel 如果是0，表示点赞评论，如果是1，表示点赞回复
+     * @param commentLevel 如果是 0, 表示点赞评论, 如果是 1, 表示点赞回复
+     * @see FundCommentService#toggleLikes(Integer, String, Byte)
      */
     @GetMapping("/toggleLikes")
     public R toggleLikes(@RequestParam("commentId") String commentId,
             @RequestParam("commentLevel") Byte commentLevel) {
-        fundCommentService.toggleLikes(UserInterceptor.toThreadLocal.get().getUserId(), commentId, commentLevel);
+        fundCommentService.toggleLikes(SignInUtils.getUserId(), commentId, commentLevel);
         return R.ok();
     }
 
+    /**
+     * 对回复进行回复
+     *
+     * @see FundCommentService#replyToReply(FundCommentReplyL2)
+     */
     @PostMapping("/replyToReply")
-    public R replyToReply(@RequestBody FundCommentReplyL2 vo) {
-        vo.setUserId(UserInterceptor.toThreadLocal.get().getUserId());
-        vo.setTime(System.currentTimeMillis());
-        fundCommentService.replyToReply(vo);
+    public R replyToReply(@RequestBody FundCommentReplyL2 to) {
+        fundCommentService.replyToReply(to);
         return R.ok().putMsg("回复回复成功");
     }
 }

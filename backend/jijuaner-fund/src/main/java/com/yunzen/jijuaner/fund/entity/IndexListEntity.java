@@ -1,9 +1,16 @@
 package com.yunzen.jijuaner.fund.entity;
 
+import java.io.Serializable;
+
 import lombok.Data;
 
+/**
+ * 指数列表实体类, 保存在 redis
+ */
 @Data
-public class IndexListEntity {
+public class IndexListEntity implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private Integer id;
     private String indexCode;
     private String indexName;

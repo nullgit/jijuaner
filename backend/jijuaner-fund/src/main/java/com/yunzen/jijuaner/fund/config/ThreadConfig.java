@@ -12,11 +12,15 @@ import org.springframework.stereotype.Component;
 
 import lombok.Data;
 
+/**
+ * 线程池配置
+ */
 @Configuration
 public class ThreadConfig {
     @Bean
     public ThreadPoolExecutor threadPoolExecutor(ThreadProperties threadProperties) {
-        return new ThreadPoolExecutor(threadProperties.getCoreSize(), threadProperties.getMaxSize(), threadProperties.getKeepAliveTime(), TimeUnit.SECONDS, new LinkedBlockingDeque<>(100000),
+        return new ThreadPoolExecutor(threadProperties.getCoreSize(), threadProperties.getMaxSize(),
+                threadProperties.getKeepAliveTime(), TimeUnit.SECONDS, new LinkedBlockingDeque<>(100000),
                 Executors.defaultThreadFactory(), new ThreadPoolExecutor.AbortPolicy());
     }
 }

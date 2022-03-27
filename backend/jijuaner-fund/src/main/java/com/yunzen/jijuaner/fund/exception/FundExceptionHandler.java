@@ -6,13 +6,20 @@ import com.yunzen.jijuaner.common.utils.R;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+/**
+ * 异常处理类, 若是自定义异常, 则返回具体信息, 若是其他异常, 则返回未知异常
+ * <p>
+ * 标准配置
+ */
 @RestControllerAdvice(basePackages = "com.yunzen.jijuaner.fund")
 public class FundExceptionHandler {
     @ExceptionHandler(value = Exception.class)
     public R handelThrowable(Exception e) {
         e.printStackTrace();
-        return R.error().putCode(JiJuanerException.UNKNOWN_EXCEPTION.getCode())
-                .putMsg("出现异常：" + e.getMessage());
-                // 生产环境下应改为 .putMsg(JiJuanerException.UNKNOWN_EXCEPTION.getMsg());
+        if (e instanceof JiJuanerException jiJuanerException) {
+            return R.error(jiJuanerException);
+        } else {
+            return R.error(JiJuanerException.UNKNOWN_EXCEPTION);
+        }
     }
 }

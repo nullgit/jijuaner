@@ -8,9 +8,14 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 
+/**
+ * Spring Session 配置, session 保存在 redis 中
+ * <p>
+ * 标准配置
+ */
 @Configuration
 public class JiJuanerSessionConfig {
-    @Value("${config.domain}")  // 配置文件中的属性
+    @Value("${config.domain}") // 配置文件中的属性
     public String domain;
 
     @Bean

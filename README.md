@@ -1,7 +1,7 @@
 # 鸡圈儿
 
-<!-- 前端 app 启动 + jsdata 服务启动：
-```sh
+<!-- ```sh
+docker start nginx mysql redis mongo nacos es rabbitmq
 cd ./frontend/jijuaner-app/ && npm run dev
 cd ./backend/jijuaner-jsdata/ && npm run dev
 ``` -->
@@ -9,6 +9,10 @@ cd ./backend/jijuaner-jsdata/ && npm run dev
 ## TODO
 
 使用 vuex 保存一些通用的信息
+
+支付功能:
+token 机制
+模拟基金公司
 
 自选功能：
 
@@ -22,7 +26,7 @@ cd ./backend/jijuaner-jsdata/ && npm run dev
 
 评论功能：
 删除回复功能
-有人点赞、回复后向用户发送通知
+有人回复后向用户发送通知
 
 指数估值曲线（数据从韭圈获得）
 投资箴言
@@ -40,6 +44,7 @@ cd ./backend/jijuaner-jsdata/ && npm run dev
 搜索
 自选
 评论
+模拟支付
 第三方服务
 
 使用技术：
@@ -57,7 +62,9 @@ cd ./backend/jijuaner-jsdata/ && npm run dev
 - jijuaner-fund:10000 基金信息服务
 - jijuaner-user:20000 用户服务
 - jijuaner-search:30000 搜索服务
-- jijuaner-search:40000 评论服务
+- jijuaner-comment:40000 评论服务
+- jijuaner-pay:50000 模拟支付服务
+- fund-company:12345 模拟基金公司服务
 
 ## 接口设计
 
@@ -252,6 +259,12 @@ jijuaner:allOptionFunds:\<userId> 数据结构为 set，set 中是对应用户�
 
 <!-- TODO -->
 
+### jijuaner_pay
+
+
+
+### fund_company
+
 ## 前端 app 设计
 
 ### 首页
@@ -295,3 +308,9 @@ jijuaner:allOptionFunds:\<userId> 数据结构为 set，set 中是对应用户�
 #### 全部回复
 
 ![](./img/replys.jpg)
+
+### 支付
+
+### 主页功能
+
+#### 指数估值

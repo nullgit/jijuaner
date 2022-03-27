@@ -153,7 +153,7 @@ router.get("/realTime/:fundCode", async (ctx, next) => {
     await axios
         .get(`http://fundgz.1234567.com.cn/js/${fundCode}.js?rt=${new Date().getTime()}`)
         .then((resp) => {
-            let resultStr = new String(resp.data)
+            let resultStr = resp.data
             let data = JSON.parse(resultStr.substring(8, resultStr.length - 2))
             // "fundcode":"005827",  // 基金代码
             // "name":"易方达蓝筹精选混合",  // 基金名字
@@ -186,6 +186,49 @@ router.get("/evalImg/:fundCode", async (ctx, next) => {
         .get(`http://j4.dfcfw.com/charts/pic6/${fundCode}.png?v=${new Date().getTime()}`)
         .then((resp) => {
             ctx.body = new R().ok().putData(resp.data)
+        })
+        .catch((err) => {
+            console.log("出错了")
+            ctx.body = new R().error().putMsg(err.toString())
+        })
+})
+
+router.get("/subscriptionStatus", async (ctx, next) => {
+    console.log(`获取所有基金申购状态`)
+    await axios
+        .get(`http://fund.eastmoney.com/Data/Fund_JJJZ_Data.aspx?page=1,50000&t=8&sort=fcode,asc`)
+        .then((resp) => {
+            let data = JSON.parse(resp.data.substring(14, resp.data.lastIndexOf("]]") + 2))
+            data = data.map(arr => {
+                // [
+                //  0 "980003" 基金代码
+                //  1 "太平洋六个月滚动持有债"  基金名称
+                //  2 "债券型-长债"  类型
+                //  3 "1.5223"  最新净值
+                //  4 "03-24"  最新净值 报告时间
+                //  5 "开放申购"  申购状态
+                //  6 "开放赎回"  赎回状态
+                //  7 ""  下一个开放日
+                //  8 "100" 购买起点
+                //  9 "100000000000"  日累计限定额
+                //  10 "1"  -
+                //  11 "1"  -
+                //  12 "0.05%"  手续费
+                // ]
+                return {
+                    fundCode: arr[0],
+                    fundName: arr[1],
+                    fundType: arr[2],
+                    subscriptionStatus: arr[5],
+                    redemptionStatus: arr[6],
+                    nextOpenDay: arr[7],
+                    minAmount: arr[8],
+                    maxAmountPerDay: arr[9],
+                    serviceCharge: arr[12].replace("%", "")
+                }
+            })
+            ctx.body = new R().ok().putData(data)
+
         })
         .catch((err) => {
             console.log("出错了")

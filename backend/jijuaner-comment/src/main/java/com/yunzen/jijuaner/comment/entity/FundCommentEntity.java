@@ -8,6 +8,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.Data;
 
+/**
+ * 基金评论实体类, 保存在 mongo 中
+ */
 @Document(collection = "fund_comment")
 @Data
 public class FundCommentEntity implements Serializable {
@@ -21,5 +24,5 @@ public class FundCommentEntity implements Serializable {
     private String content;
     private Integer likes;
     private Integer replyNum;
-    private Map<String, Boolean> likeUsers;  // 点赞的用户
+    private Map<String, Boolean> likeUsers; // 点赞的用户
 }

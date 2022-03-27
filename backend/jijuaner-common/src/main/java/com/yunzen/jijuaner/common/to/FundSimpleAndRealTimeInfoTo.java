@@ -4,6 +4,9 @@ import java.io.Serializable;
 
 import lombok.Data;
 
+/**
+ * 简单的基金信息(基金名称, 类型, 收益率等) + 基金实时信息(实时估值信息)
+ */
 @Data
 public class FundSimpleAndRealTimeInfoTo implements Serializable {
     private static final long serialVersionUID = 1L;

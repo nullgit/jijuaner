@@ -4,6 +4,11 @@ import lombok.Data;
 
 import java.io.Serializable;
 
+import com.yunzen.jijuaner.common.exception.JiJuanerException;
+
+/**
+ * 自定义前后端数据传输对象
+ */
 @Data
 public class R implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -24,6 +29,13 @@ public class R implements Serializable {
         return r;
     }
 
+    public static R error(JiJuanerException e) {
+        R r = new R();
+        r.setCode(e.getCode());
+        r.setMsg(e.getMessage());
+        return r;
+    }
+
     public R putData(Object data) {
         this.setData(data);
         return this;
@@ -34,8 +46,8 @@ public class R implements Serializable {
         return this;
     }
 
-    public R putMsg(String Msg) {
-        this.setMsg(Msg);
+    public R putMsg(String msg) {
+        this.setMsg(msg);
         return this;
     }
 }

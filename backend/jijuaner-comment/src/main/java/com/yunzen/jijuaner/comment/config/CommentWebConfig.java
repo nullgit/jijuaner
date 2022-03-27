@@ -10,7 +10,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class CommentWebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new UserInterceptor())// 注册拦截器
+        registry.addInterceptor(new UserInterceptor()) // 注册拦截器
                 .addPathPatterns("/**");
     }
 }

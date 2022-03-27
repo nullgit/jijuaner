@@ -66,10 +66,11 @@
             </div>
         </el-card>
 
-        <van-grid class="buttom-bar" :column-num="2">
+        <van-grid class="buttom-bar" :column-num="3">
             <van-grid-item icon="comment-o" :to="`/comments/${fundCode}`" />
             <van-grid-item v-if="isOptional" @click="cancelOption" icon="star" />
             <van-grid-item v-else @click="addOption" icon="star-o" />
+            <van-grid-item icon="cart-o" :to="`/pay/${fundCode}`" />
         </van-grid>
     </div>
 </template>

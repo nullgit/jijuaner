@@ -16,12 +16,12 @@ public class FundSchedule {
     @Autowired
     FundListController fundListController;
 
+    /**
+     * 定时任务，每天凌晨零点更新全部基金列表
+     */
     @Async
     @Scheduled(cron = "0 0 0 * * ?")
-    /**
-    * 定时任务，每天凌晨零点更新全部基金列表
-    */
-    public void hello() {
+    public void updateAllFundList() {
         fundListController.updateAll();
     }
 }

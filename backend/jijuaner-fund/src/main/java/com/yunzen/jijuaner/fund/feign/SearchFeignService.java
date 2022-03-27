@@ -1,7 +1,5 @@
 package com.yunzen.jijuaner.fund.feign;
 
-import java.io.IOException;
-
 import com.yunzen.jijuaner.common.utils.R;
 
 import org.springframework.cloud.openfeign.FeignClient;

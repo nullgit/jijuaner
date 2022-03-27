@@ -5,7 +5,6 @@ import java.util.List;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
-import com.yunzen.jijuaner.common.exception.FeignException;
 import com.yunzen.jijuaner.common.utils.JiJuanerConstantString;
 import com.yunzen.jijuaner.common.utils.R;
 import com.yunzen.jijuaner.fund.config.FundUtils;
@@ -17,7 +16,10 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service("indexListService")
+@Slf4j
 public class IndexListService {
     @Autowired
     private JSDataFeignService jsDataFeignService;
@@ -31,22 +33,22 @@ public class IndexListService {
         String key = JiJuanerConstantString.INDEX_LIST.getConstant();
         String resultJSON = FundUtils.getRedisKeyIfInValidTime(opsForValue, timeKey, key,
                 LocalDateTime.now().minusHours(12));
-        if (resultJSON != null) {
-            return JSON.parseObject(resultJSON, new TypeReference<List<IndexListEntity>>() {
-            });
+        var typeReference = new TypeReference<List<IndexListEntity>>() {
+        };
+        if (resultJSON != null) {  // redis 中的数据没有过期
+            return JSON.parseObject(resultJSON, typeReference);
         }
         R allIndexR = jsDataFeignService.getAllIndex();
         if (allIndexR.getCode() == 0) {
             resultJSON = JSON.toJSONString(allIndexR.getData());
-            List<IndexListEntity> allIndex = JSON.parseObject(resultJSON,
-                    new TypeReference<List<IndexListEntity>>() {
-                    });
+            List<IndexListEntity> allIndex = JSON.parseObject(resultJSON, typeReference);
             opsForValue.set(key, resultJSON);
             opsForValue.set(timeKey, Long.toString(System.currentTimeMillis()));
             return allIndex;
         } else {
-            // TODO 虽然远程调用失败，但是还是可以先使用旧的数据
-            throw new FeignException(allIndexR.getMsg());
+            // 虽然远程调用失败，但是还是可以先使用旧的数据
+            log.error(allIndexR.getMsg());
+            return JSON.parseObject(opsForValue.get(key), typeReference);
         }
     }
 

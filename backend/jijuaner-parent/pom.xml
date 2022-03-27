@@ -17,6 +17,8 @@
         <module>../jijuaner-search</module>
         <module>../jijuaner-gateway</module>
         <module>../jijuaner-comment</module>
+        <module>../jijuaner-pay</module>
+        <module>../fund-company</module>
     </modules>
 
     <parent>

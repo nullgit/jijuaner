@@ -7,6 +7,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.Data;
 
+/**
+ * 基金列表实体类, 保存在 MongoDB
+ */
 @Data
 @Document(collection = "fund_list")
 public class FundListEntity implements Serializable {

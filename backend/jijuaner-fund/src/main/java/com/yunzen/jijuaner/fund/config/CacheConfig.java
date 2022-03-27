@@ -10,29 +10,33 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+/**
+ * redis 做缓存配置, redis 中的缓存使用 json 格式保存
+ * <p>
+ * 标准配置
+ */
 @EnableConfigurationProperties(CacheProperties.class)
 @Configuration
 @EnableCaching
 public class CacheConfig {
 
-
-    // redis 做缓存配置
     @Bean
     public RedisCacheConfiguration redisCacheConfiguration(CacheProperties cacheProperties) {
 
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig();
-        config = config.serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()));
-        config = config.serializeValuesWith(
-                RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
-        // 保存的value为json格式
+        config = config.serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(
+                new StringRedisSerializer()));
+        // 设置保存的 value 为 json 格式
+        config = config.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
+                new GenericJackson2JsonRedisSerializer()));
 
         CacheProperties.Redis redisProperties = cacheProperties.getRedis();
-        //将配置文件中所有的配置都生效
+        // 将配置文件中所有的配置都生效
         if (redisProperties.getTimeToLive() != null) {
             config = config.entryTtl(redisProperties.getTimeToLive());
         }
         if (redisProperties.getKeyPrefix() != null) {
-            config = config.prefixKeysWith(redisProperties.getKeyPrefix());
+            config = config.prefixCacheNameWith(redisProperties.getKeyPrefix());
         }
         if (!redisProperties.isCacheNullValues()) {
             config = config.disableCachingNullValues();
