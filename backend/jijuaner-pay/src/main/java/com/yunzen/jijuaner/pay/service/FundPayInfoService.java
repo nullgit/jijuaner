@@ -11,7 +11,6 @@ import com.yunzen.jijuaner.common.utils.JiJuanerConstantString;
 import com.yunzen.jijuaner.common.utils.R;
 import com.yunzen.jijuaner.pay.entity.FundPayInfoEntity;
 import com.yunzen.jijuaner.pay.feign.JSDataFeignService;
-import com.yunzen.jijuaner.pay.vo.SubscribeVo;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -22,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service("payService")
 @Slf4j
-public class PayService {
+public class FundPayInfoService {
     @Autowired
     private MongoTemplate mongo;
 
@@ -58,7 +57,4 @@ public class PayService {
         return token;
     }
 
-    public void subscribe(SubscribeVo vo) {
-        // TODO 首先检查 token 是否正确, 然后向数据库中插入一条申购记录, 定时(交易日下午3:00后)将申购记录发送给基金公司
-    }
 }

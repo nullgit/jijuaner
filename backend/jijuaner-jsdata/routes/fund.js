@@ -228,7 +228,6 @@ router.get("/subscriptionStatus", async (ctx, next) => {
                 }
             })
             ctx.body = new R().ok().putData(data)
-
         })
         .catch((err) => {
             console.log("出错了")

@@ -32,7 +32,6 @@ import com.yunzen.jijuaner.user.entity.UserListEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -41,7 +40,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 @Service("userListService")
-@RefreshScope
 public class UserListService extends ServiceImpl<UserListDao, UserListEntity> {
     private static final String USER_ID = "user_id";
     private static final String USER_NAME = "user_name";

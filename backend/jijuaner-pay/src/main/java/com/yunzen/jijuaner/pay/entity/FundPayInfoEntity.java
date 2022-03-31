@@ -21,6 +21,6 @@ public class FundPayInfoEntity implements Serializable {
     private String redemptionStatus;
     private String nextOpenDay;
     private BigDecimal minAmount;
-    private BigDecimal serviceCharge;
     private BigDecimal maxAmountPerDay;
+    private BigDecimal serviceCharge;
 }

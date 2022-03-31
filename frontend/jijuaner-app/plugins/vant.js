@@ -16,7 +16,8 @@ import {
     Cell,
     CellGroup,
     Swipe, SwipeItem, Uploader,
-    Popup, Badge, Icon, List
+    Popup, Badge, Icon, List,
+    Overlay
 } from "vant"
 
 // 目前在 nuxt 中无法按需引入样式，因此采用手动引入的方式
@@ -39,3 +40,4 @@ Vue.use(Notify)
     .use(CellGroup)
     .use(Swipe).use(SwipeItem).use(Uploader)
     .use(Popup).use(Badge).use(Icon).use(List)
+    .use(Overlay)

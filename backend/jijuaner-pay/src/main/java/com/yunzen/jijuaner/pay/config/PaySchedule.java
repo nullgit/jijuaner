@@ -1,6 +1,6 @@
 package com.yunzen.jijuaner.pay.config;
 
-import com.yunzen.jijuaner.pay.controller.PayController;
+import com.yunzen.jijuaner.pay.controller.FundPayInfoController;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 @EnableScheduling
 public class PaySchedule {
     @Autowired
-    PayController payController;
+    FundPayInfoController fundPayInfoController;
 
     @Async
     @Scheduled(cron = "0 0 0 * * ?")
@@ -22,6 +22,8 @@ public class PaySchedule {
      * 定时任务，每天凌晨零点更新全部基金申购信息列表
      */
     public void updateAllFundPayInfo() {
-        payController.updateAllFundPayInfo();
+        fundPayInfoController.updateAllFundPayInfo();
     }
+
+    
 }

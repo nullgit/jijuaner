@@ -1,9 +1,14 @@
 # 鸡圈儿
 
 <!-- ```sh
-docker start nginx mysql redis mongo nacos es rabbitmq
+docker start nginx mysql redis mongo nacos  rabbitmq 
+docker stop nginx mysql redis mongo nacos  rabbitmq 
+es
 cd ./frontend/jijuaner-app/ && npm run dev
 cd ./backend/jijuaner-jsdata/ && npm run dev
+
+cd A:\program\ding\
+.\ding.exe -config="./ding.cfg" -subdomain="gateway.jijuaner" 50000
 ``` -->
 
 ## TODO
@@ -11,8 +16,7 @@ cd ./backend/jijuaner-jsdata/ && npm run dev
 使用 vuex 保存一些通用的信息
 
 支付功能:
-token 机制
-模拟基金公司
+模拟基金公司的处理
 
 自选功能：
 
@@ -35,6 +39,7 @@ token 机制
 文章发表
 系统消息
 恐贪指数（数据从韭圈获得）
+
 
 ## 整体设计
 
@@ -261,6 +266,73 @@ jijuaner:allOptionFunds:\<userId> 数据结构为 set，set 中是对应用户�
 
 ### jijuaner_pay
 
+#### fund_pay_info (MongoDB)
+
+- fundCode 基金代码
+- fundName 基金名称
+- fundType 基金类型
+- subscriptionStatus 申购状态
+- redemptionStatus 赎回状态
+- nextOpenDay 下一个开放日
+- minAmount 购买起点
+- serviceCharge 日累计限定额
+- maxAmountPerDay 手续费
+
+#### transaction (MySQL)
+
+```sql
+CREATE TABLE transaction(  
+    id BIGINT PRIMARY KEY COMMENT '雪花算法生成的交易id',
+    user_id INT COMMENT '交易的用户',
+    amount DECIMAL COMMENT '交易的金额',
+    `type` ENUM('UNPAYED_SUBSCRIBE',
+                'PAYED_SUBSCRIBE',
+                'REDEEM',
+                'CANCEL_SUBSCRIBE',
+                'CANCEL_REDEEM',
+                'SUBSCRIBE_DONE',
+                'SUBSCRIBE_TIMEOUT',
+                'REDEEM_DONE') COMMENT '交易类型',
+    fund_code VARCHAR(16) COMMENT '基金代码',
+    `time` BIGINT COMMENT '发起交易的时间'
+) ENGINE=INNODB DEFAULT CHARSET UTF8 COMMENT '交易列表';
+```
+
+#### porperty
+
+```sql
+CREATE TABLE property(
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '',
+    user_id INT COMMENT '对应资产的用户',
+    amount DECIMAL COMMENT '资产的份额',
+    fund_code VARCHAR(16) COMMENT '基金代码'
+) ENGINE=INNODB DEFAULT CHARSET UTF8 AUTO_INCREMENT=1 COMMENT '资产列表';
+```
+
+#### alipay_order
+
+```sql
+CREATE TABLE alipay_order(
+    id BIGINT PRIMARY KEY COMMENT '交易id',
+    trade_no VARCHAR(64) COMMENT '支付宝流水号',
+    buyer_id VARCHAR(16) COMMENT '支付者的id',
+    seller_id VARCHAR(30) COMMENT '商家的id',
+    buyer_pay_amount DECIMAL COMMENT '用户支付的金额',
+    total_amount DECIMAL COMMENT '订单支付的总额',
+    receipt_amount DECIMAL COMMENT '商家收到的款',
+    invoice_amount DECIMAL COMMENT '可开发票的金额',
+    `subject` VARCHAR(256) COMMENT '支付时显示的主题',
+    body VARCHAR(400) COMMENT '支付时显示的订单信息',
+    gmt_create VARCHAR(20) COMMENT '该笔交易创建的时间',
+    gmt_payment VARCHAR(20) COMMENT '该笔交易支付的时间',
+    gmt_close VARCHAR(20) COMMENT '该笔交易结束的时间',
+    notify_time VARCHAR(20) COMMENT '通知发送的时间',
+    notify_id VARCHAR(128) COMMENT '通知id',
+    notify_type VARCHAR(64) COMMENT '通知类型',
+    trade_status ENUM('WAIT_BUYER_PAY', 'TRADE_CLOSED', 'TRADE_SUCCESS', 'TRADE_FINISHED') COMMENT '交易状态',
+    fund_bill_list VARCHAR(512) COMMENT '支付成功的各个渠道金额信息'
+) ENGINE=INNODB DEFAULT CHARSET UTF8 COMMENT '支付宝交易订单列表';
+```
 
 
 ### fund_company

@@ -22,8 +22,15 @@
             基金销售资格: 证监许可[xxxx]xxx号
         </div>
         点击确定即代表您已知晓该基金的产品概要和投资人权益须知等相关内容
-        <button>确定</button>
-        token: {{payFundInfo.token}}
+        <button @click="subscribe">确定</button>
+        <a
+            :href="
+                `http://gateway.jijuaner.vaiwan.com/api/pay/transaction/subscribe` +
+                `?fundCode=${this.payFundInfo.fundCode}&amount=${this.amount}&token=${this.payFundInfo.token}`
+            "
+            >申购</a
+        >
+        token: {{ payFundInfo.token }}
     </div>
 </template>
 
@@ -51,18 +58,37 @@ export default Vue.extend({
                 token: "",
             },
             amount: "",
+            payUrl: "",
         }
     },
     computed: {},
     methods: {
         handleReturn,
+        subscribe() {
+            axios
+                // .post(`/api/pay/transaction/generateSubscribeOrder`, {
+                //     fundCode: this.payFundInfo.fundCode,
+                //     amount: this.amount,
+                //     token: this.payFundInfo.token,
+                // })
+                .get(
+                    `/api/pay/transaction/generateSubscribeOrder` +
+                        `?fundCode=${this.payFundInfo.fundCode}&amount=${this.amount}&token={this.payFundInfo.token}`
+                )
+                .then(({ data }) => {
+                    console.log(data)
+                    this.payUrl = `http://gateway.jijuaner.vaiwan.com/pay/transaction/subscribe?id=${data.data}`
+                    this.$refs["subscribeA"].click()
+                })
+                .catch(console.log)
+        },
     },
     async asyncData({ params }) {
         return { fundCode: params.id }
     },
     async mounted() {
         axios
-            .get(`/api/pay/fundInfo/${this.fundCode}`)
+            .get(`/api/pay/fund/info/${this.fundCode}`)
             .then(({ data }) => (this.payFundInfo = data.data))
             .catch(console.log)
     },
@@ -70,4 +96,11 @@ export default Vue.extend({
 </script>
 
 <style lang="less" scoped>
+.wrapper {
+    .block {
+        width: 400px;
+        height: 800px;
+        background-color: white;
+    }
+}
 </style>
