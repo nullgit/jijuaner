@@ -1,18 +1,23 @@
 # 鸡圈儿
 
 <!-- ```sh
+启动热点
+
 docker start nginx mysql redis mongo nacos  rabbitmq 
 docker stop nginx mysql redis mongo nacos  rabbitmq 
 es
+
 cd ./frontend/jijuaner-app/ && npm run dev
 cd ./backend/jijuaner-jsdata/ && npm run dev
 
 cd A:\program\ding\
 .\ding.exe -config="./ding.cfg" -subdomain="gateway.jijuaner" 50000
+
 ``` -->
 
 ## TODO
 
+!!将金额数据用BigInteger保存, 并指明它的位数
 使用 vuex 保存一些通用的信息
 
 支付功能:
@@ -21,6 +26,7 @@ cd A:\program\ding\
 自选功能：
 
 详情页功能：
+使用的应该是复权累积净值而不是累计净值
 设置时间段
 设置参考指数（数据从韭圈获得）
 货币基金没有累计净值
@@ -34,11 +40,10 @@ cd A:\program\ding\
 
 指数估值曲线（数据从韭圈获得）
 投资箴言
-（模拟投资）
-（量化）
-文章发表
+模拟投资 + 量化
+(文章发表)
 系统消息
-恐贪指数（数据从韭圈获得）
+<!-- 恐贪指数（数据从韭圈获得） -->
 
 
 ## 整体设计
@@ -59,6 +64,7 @@ cd A:\program\ding\
 - Redis
 - MongoDB
 - Nginx
+- RabbitMQ
 
 ### 微服务
 
@@ -383,6 +389,14 @@ CREATE TABLE alipay_order(
 
 ### 支付
 
+![](./img/pay.jpg)
+
 ### 主页功能
 
 #### 指数估值
+
+![](./img/value.jpg)
+
+#### 量化
+
+敬请期待
