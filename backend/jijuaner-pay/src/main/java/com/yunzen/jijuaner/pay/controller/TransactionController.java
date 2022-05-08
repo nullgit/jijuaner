@@ -1,5 +1,6 @@
 package com.yunzen.jijuaner.pay.controller;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,11 +11,14 @@ import com.alipay.api.internal.util.AlipaySignature;
 import com.yunzen.jijuaner.common.utils.R;
 import com.yunzen.jijuaner.common.utils.SignInUtils;
 import com.yunzen.jijuaner.pay.config.AlipayTemplate;
+import com.yunzen.jijuaner.pay.config.PayUtils;
+import com.yunzen.jijuaner.pay.service.FundPayInfoService;
 import com.yunzen.jijuaner.pay.service.TransactionService;
 import com.yunzen.jijuaner.pay.vo.AlipayAsyncVo;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TransactionController {
     @RequestMapping("/hello")
     public String hello() {
-        
+
         return "hello, pay transaction!!!";
     }
 
@@ -95,8 +99,11 @@ public class TransactionController {
         }
     }
 
-    @GetMapping("/test")
-    public R test() {
-        return R.ok();
+    @Autowired
+    private FundPayInfoService fundPayInfoService;
+
+    @GetMapping("/test/{fundCode}")
+    public R test(@PathVariable("fundCode") String fundCode) {
+        return R.ok().putData(PayUtils.countService(new BigInteger("10000"), new BigInteger("150")));
     }
 }

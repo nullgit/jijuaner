@@ -146,7 +146,6 @@ router.get("/info/:fundCode", async (ctx, next) => {
         })
 })
 
-
 router.get("/realTime/:fundCode", async (ctx, next) => {
     let fundCode = ctx.params.fundCode
     console.log(`获取基金实时数据：${fundCode}`)
@@ -199,7 +198,7 @@ router.get("/subscriptionStatus", async (ctx, next) => {
         .get(`http://fund.eastmoney.com/Data/Fund_JJJZ_Data.aspx?page=1,50000&t=8&sort=fcode,asc`)
         .then((resp) => {
             let data = JSON.parse(resp.data.substring(14, resp.data.lastIndexOf("]]") + 2))
-            data = data.map(arr => {
+            data = data.map((arr) => {
                 // [
                 //  0 "980003" 基金代码
                 //  1 "太平洋六个月滚动持有债"  基金名称
@@ -222,9 +221,9 @@ router.get("/subscriptionStatus", async (ctx, next) => {
                     subscriptionStatus: arr[5],
                     redemptionStatus: arr[6],
                     nextOpenDay: arr[7],
-                    minAmount: arr[8],
-                    maxAmountPerDay: arr[9],
-                    serviceCharge: arr[12].replace("%", "")
+                    minAmount: Math.round(arr[8] * 100), // 改为 BigInteger 类型, 小数后2位
+                    maxAmountPerDay: Math.round(arr[9] * 100), // 改为 BigInteger 类型, 小数后2位
+                    serviceCharge: Math.round(arr[12].replace("%", "") * 1000), // 改为 BigInteger 类型, 小数后3位
                 }
             })
             ctx.body = new R().ok().putData(data)

@@ -34,7 +34,7 @@ public class TransactionRabbitConfig {
         rabbit.setMessageConverter(messageConverter());
 
         /**
-         * 确认回调
+         * 发送方确认, 消息投递成功或失败都触发该回调
          * correlationData: 当前消息的唯一关联数据(这个是消息的唯一id)
          * ack: 消息是否成功收到, 只要消息抵达Broker后为true
          * cause: 失败的原因
@@ -44,7 +44,7 @@ public class TransactionRabbitConfig {
             log.error("correlationData:" + correlationData + "ack:" + ack + "cause" + cause);
         });
         /**
-         * 消息没有投递给指定的队列, 就触发这个失败回调
+         * 发送方确认, 消息没有投递给指定的队列, 就触发这个失败回调
          * message: 投递失败的消息详细信息
          * replyCode: 回复的状态码
          * replyText: 回复的文本内容

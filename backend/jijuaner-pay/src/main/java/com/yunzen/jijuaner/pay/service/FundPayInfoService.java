@@ -1,5 +1,6 @@
 package com.yunzen.jijuaner.pay.service;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -14,6 +15,8 @@ import com.yunzen.jijuaner.pay.feign.JSDataFeignService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +25,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service("payService")
 @Slf4j
 public class FundPayInfoService {
+    public static final String _ID = "_id";
+    public static final String SERVICE_CHARGE = "serviceCharge";
+
     @Autowired
     private MongoTemplate mongo;
 
@@ -41,6 +47,7 @@ public class FundPayInfoService {
             List<FundPayInfoEntity> allList = JSON.parseObject(JSON.toJSONString(allListR.getData()),
                     new TypeReference<List<FundPayInfoEntity>>() {
                     });
+
             log.info("开始基金申购信息列表数据，共{}条", allList.size());
             mongo.dropCollection(FundPayInfoEntity.class);
             mongo.insert(allList, FundPayInfoEntity.class);
@@ -57,4 +64,13 @@ public class FundPayInfoService {
         return token;
     }
 
+    public BigInteger getServiceCharge(String fundCode) {
+        Query query = Query.query(Criteria.where(_ID).is(fundCode));
+        query.fields().include(SERVICE_CHARGE);
+        FundPayInfoEntity entity= mongo.findOne(query, FundPayInfoEntity.class);
+        if (entity == null) {
+            return null;
+        }
+        return entity.getServiceCharge();
+    }
 }

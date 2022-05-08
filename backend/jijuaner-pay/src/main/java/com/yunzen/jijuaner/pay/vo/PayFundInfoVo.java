@@ -2,6 +2,7 @@ package com.yunzen.jijuaner.pay.vo;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import lombok.Data;
 
@@ -18,9 +19,9 @@ public class PayFundInfoVo implements Serializable {
     private String subscriptionStatus;
     private String redemptionStatus;
     private String nextOpenDay;
-    private BigDecimal minAmount;
+    private BigInteger minAmount;
     private BigDecimal serviceCharge;
-    private BigDecimal maxAmountPerDay;
+    private BigInteger maxAmountPerDay;
 
     private String token;
 }

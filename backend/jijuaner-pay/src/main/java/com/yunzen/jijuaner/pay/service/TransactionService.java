@@ -2,6 +2,7 @@ package com.yunzen.jijuaner.pay.service;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -78,13 +79,14 @@ public class TransactionService extends ServiceImpl<TransactionDao, TransactionE
                 || !StringUtils.hasText(amountStr)) {
             throw JiJuanerException.SUBSCRIBE_EXCEPTION.putMessage("验证不通过, 请重新填写表单或刷新页面");
         }
-        var amount = new BigDecimal(amountStr);
+        BigInteger amount = new BigDecimal(amountStr).multiply(BigDecimal.valueOf(100L)).toBigInteger();
         FundPayInfoEntity fundPayInfo = fundPayInfoService.getPayFundInfo(fundCode);
         if ("暂停申购".equals(fundPayInfo.getSubscriptionStatus())) {
             throw JiJuanerException.SUBSCRIBE_EXCEPTION.putMessage("该基金暂停申购");
         } else if (amount.compareTo(fundPayInfo.getMinAmount()) < 0) {
             throw JiJuanerException.SUBSCRIBE_EXCEPTION.putMessage("单笔申购小于最低金额");
         } else if (amount.compareTo(fundPayInfo.getMaxAmountPerDay()) > 0) {
+            // TODO 统计今日已申购的金额
             throw JiJuanerException.SUBSCRIBE_EXCEPTION.putMessage("单笔申购或今日申购金额最大限额");
         }
 
@@ -102,24 +104,20 @@ public class TransactionService extends ServiceImpl<TransactionDao, TransactionE
         var entity = new TransactionEntity();
         entity.setUserId(userId);
         entity.setFundCode(fundCode);
-        // TODO 计算扣除手续费后的金额
-        // entity.setAmount(PayUtils.setScale(Amount
-        // .min(Amount.multiply(fundPayInfo.getServiceCharge()).multiply(new
-        // BigDecimal("0.01"))), 2));
-        entity.setAmount(amount.min(BigDecimal.ONE).setScale(2));
+        // 扣除手续费后金额: PayUtils.countService(amount, fundPayInfoService.getServiceCharge(fundCode))
+        entity.setAmount(amount);
         entity.setTime(System.currentTimeMillis());
         entity.setType(TransactionType.UNPAYED_SUBSCRIBE);
         baseMapper.insert(entity);
 
         var payVo = new AliPayVo();
         payVo.setOutTradeNo(entity.getId().toString());
-        payVo.setTotalAmount(entity.getAmount().toString());
-        payVo.setSubject("购买基金, 代码" + entity.getFundCode());
+        payVo.setTotalAmount(new BigDecimal(amount, 2).toString());
+        payVo.setSubject("购买基金, 代码" + fundCode);
         payVo.setBody("无详情");
         String payPage = alipay.pay(payVo);
 
         // 向消息队列发送开单的消息, 设置定时关单
-        // TODO 发送方确认
         rabbit.convertAndSend(TransactionRabbitConfig.TRANSACTION_EXCHANGE, TransactionRabbitConfig.SUBSCRIBE_CREATE,
                 entity.getId(),
                 new CorrelationData(entity.getId() + UUID.randomUUID().toString()) // 消息的id, 用让发送端判断消息是否到达
@@ -188,6 +186,7 @@ public class TransactionService extends ServiceImpl<TransactionDao, TransactionE
                 entity.setType(TransactionType.SUBSCRIBE_TIMEOUT);
                 updateById(entity);
             }
+            // 接受方确认
             channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
         } catch (Exception e) {
             Thread.sleep(1000);

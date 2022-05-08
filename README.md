@@ -3,9 +3,8 @@
 <!-- ```sh
 启动热点
 
-docker start nginx mysql redis mongo nacos  rabbitmq 
-docker stop nginx mysql redis mongo nacos  rabbitmq 
-es
+docker start nginx mysql redis mongo nacos rabbitmq es
+docker stop nginx mysql redis mongo nacos rabbitmq es
 
 cd ./frontend/jijuaner-app/ && npm run dev
 cd ./backend/jijuaner-jsdata/ && npm run dev
@@ -17,16 +16,17 @@ cd A:\program\ding\
 
 ## TODO
 
-!!将金额数据用BigInteger保存, 并指明它的位数
+将金额数据用BigInteger保存, 并指明它的位数, 修改数据库的类型定义
 使用 vuex 保存一些通用的信息
 
 支付功能:
+支付成功后页面
 模拟基金公司的处理
 
 自选功能：
 
 详情页功能：
-使用的应该是复权累积净值而不是累计净值
+!!使用的应该是复权累积净值而不是累计净值
 设置时间段
 设置参考指数（数据从韭圈获得）
 货币基金没有累计净值
@@ -55,7 +55,7 @@ cd A:\program\ding\
 自选
 评论
 模拟支付
-第三方服务
+量化
 
 使用技术：
 - SpringBoot
@@ -65,17 +65,21 @@ cd A:\program\ding\
 - MongoDB
 - Nginx
 - RabbitMQ
+- Koa2
+- Flask
+<!-- - Backtrader (Python 量化) -->
 
 ### 微服务
 
 - jijuaner-jsdata:33333 第三方服务
-- jijuaner-gateway:88 网关服务
-- jijuaner-fund:10000 基金信息服务
-- jijuaner-user:20000 用户服务
-- jijuaner-search:30000 搜索服务
-- jijuaner-comment:40000 评论服务
-- jijuaner-pay:50000 模拟支付服务
-- fund-company:12345 模拟基金公司服务
+- jijuaner-gateway:88 网关
+- jijuaner-quant:9090 量化
+- jijuaner-fund:10000 基金信息
+- jijuaner-user:20000 用户
+- jijuaner-search:30000 搜索
+- jijuaner-comment:40000 评论
+- jijuaner-pay:50000 模拟支付
+- fund-company:12345 模拟基金公司
 
 ## 接口设计
 
@@ -98,7 +102,7 @@ cd A:\program\ding\
 ### 数据库设计概览
 
 MySQL：
-- jijuaner_user 
+- jijuaner_user
   - user_list 用户列表，包含用户注册、登录信息
   - user_option 用户自选基金
 
@@ -123,6 +127,10 @@ Redis：
 - jijuaner(user)
   - code:\<userId> 用户的验证码
   - allOptionFunds:\<userId> 对应用户的全部自选基金
+- ak
+  - index_value_name_funddb 韭圈儿所有指数的名称
+  - index_value_hist_funddb 韭圈儿指数市盈率, 市净率, 股息率
+  - bond_rate 国债收益率
 
 es：
 - jijuaner_fundlist 所有基金列表
@@ -280,14 +288,14 @@ jijuaner:allOptionFunds:\<userId> 数据结构为 set，set 中是对应用户�
 - subscriptionStatus 申购状态
 - redemptionStatus 赎回状态
 - nextOpenDay 下一个开放日
-- minAmount 购买起点
-- serviceCharge 日累计限定额
-- maxAmountPerDay 手续费
+- minAmount 购买起点 (小数后2位)
+- serviceCharge 手续费率% (小数后3位)
+- maxAmountPerDay 日累计限定额 (小数后2位)
 
 #### transaction (MySQL)
 
 ```sql
-CREATE TABLE transaction(  
+CREATE TABLE transaction(
     id BIGINT PRIMARY KEY COMMENT '雪花算法生成的交易id',
     user_id INT COMMENT '交易的用户',
     amount DECIMAL COMMENT '交易的金额',
@@ -342,6 +350,38 @@ CREATE TABLE alipay_order(
 
 
 ### fund_company
+
+### jijuaner_quant
+
+#### index_value_name_funddb(Redis)
+
+韭圈儿所有指数的名称
+
+- index_name 指数名称
+- index_code 指数代码
+- start_time 指数开始时间
+
+#### index_value_hist_funddb(MongoDB)
+
+- index_name 指数名称
+- pe_x 市盈率日期
+- pe_y 市盈率
+- pb_x 市净率日期
+- pb_y 市净率
+- pd_x 股息率日期
+- pd_y 股息率
+
+#### bond_rate(Redis)
+
+国债收益率hash
+- zh_2_year
+- zh_5_year
+- zh_10_year
+- zh_30_year
+- us_2_year
+- us_5_year
+- us_10_year
+- us_30_year
 
 ## 前端 app 设计
 

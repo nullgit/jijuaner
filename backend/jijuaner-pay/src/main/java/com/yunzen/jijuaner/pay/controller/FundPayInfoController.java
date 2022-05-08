@@ -1,7 +1,10 @@
 package com.yunzen.jijuaner.pay.controller;
 
+import java.math.BigDecimal;
+
 import com.yunzen.jijuaner.common.utils.R;
 import com.yunzen.jijuaner.common.utils.SignInUtils;
+import com.yunzen.jijuaner.pay.config.PayUtils;
 import com.yunzen.jijuaner.pay.entity.FundPayInfoEntity;
 import com.yunzen.jijuaner.pay.service.FundPayInfoService;
 import com.yunzen.jijuaner.pay.vo.PayFundInfoVo;
@@ -39,8 +42,11 @@ public class FundPayInfoController {
         }
         FundPayInfoEntity entity = fundPayInfoService.getPayFundInfo(fundCode);
         BeanUtils.copyProperties(entity, vo);
+        vo.setMinAmount(PayUtils.changeScale(vo.getMinAmount(), 2));
+        vo.setMaxAmountPerDay(PayUtils.changeScale(vo.getMaxAmountPerDay(), 2));
+        vo.setServiceCharge(new BigDecimal(entity.getServiceCharge(), 3));
         return R.ok().putData(vo);
     }
 
-    
+
 }

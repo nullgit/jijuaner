@@ -1,7 +1,7 @@
 package com.yunzen.jijuaner.pay.entity;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -30,7 +30,7 @@ public class TransactionEntity implements Serializable {
     private Integer userId;
     private TransactionType type;
     private String fundCode;
-    private BigDecimal amount;
+    private BigInteger amount;
     private Long time;
 
     public enum TransactionType {

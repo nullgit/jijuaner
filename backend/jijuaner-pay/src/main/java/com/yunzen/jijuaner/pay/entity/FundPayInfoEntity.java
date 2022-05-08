@@ -1,7 +1,7 @@
 package com.yunzen.jijuaner.pay.entity;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -20,7 +20,7 @@ public class FundPayInfoEntity implements Serializable {
     private String subscriptionStatus;
     private String redemptionStatus;
     private String nextOpenDay;
-    private BigDecimal minAmount;
-    private BigDecimal maxAmountPerDay;
-    private BigDecimal serviceCharge;
+    private BigInteger minAmount;
+    private BigInteger maxAmountPerDay;
+    private BigInteger serviceCharge;
 }

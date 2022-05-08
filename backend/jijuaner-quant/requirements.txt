@@ -1,0 +1,11 @@
+akshare
+flask
+flask_sqlalchemy
+flask_redis
+flask_pymongo
+aiohttp
+pymysql
+gevent
+nacos
+backtrader
+backtrader_plotting
