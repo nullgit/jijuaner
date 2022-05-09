@@ -2,7 +2,7 @@ import argparse
 import asyncio
 
 from config import Config
-from databus import db, mongo, nacos_client process_pool, redis, thread_pool
+from databus import db, mongo, process_pool, redis, thread_pool
 from flask import Flask
 from gevent import pywsgi
 from utils.nacos_utils import send_heartbeat, send_request_to_nacos_instance

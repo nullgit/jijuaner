@@ -6,6 +6,7 @@ flask_pymongo
 aiohttp
 pymysql
 gevent
-nacos
+nacos-sdk-python
 backtrader
 backtrader_plotting
+jsonpickle

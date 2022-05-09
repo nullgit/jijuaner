@@ -98,6 +98,8 @@ export default Vue.extend({
                 yieldSixMonths: 0,
                 yieldThreeMonths: 0,
                 yieldOneMonth: 0,
+                x: [],
+                netWorthTrend: [],
                 acWorthTrend: [],
                 currentManagers: [],
             },
@@ -105,38 +107,29 @@ export default Vue.extend({
             yieldNavName: "sinceEstablishment",
             yieldChart: null,
             establishmentDay: null,
-            xs: [],
-            ys: [],
+            xs: [], // 日期字符串数组
+            ys: [], // 复权累计净值收益率数组
             isOptional: false,
         }
     },
     computed: {
         yieldOneDay() {
             if (this.validateAcWorthTrend(2)) {
-                return (
-                    ((this.fundInfo.acWorthTrend[0].y - this.fundInfo.acWorthTrend[1].y) /
-                        this.fundInfo.acWorthTrend[1].y) *
-                    100
-                )
+                return (this.fundInfo.acWorthTrend[0] - this.fundInfo.acWorthTrend[1]) /
+                        this.fundInfo.acWorthTrend[1] * 100
             }
             return 0.0
         },
         netWorth() {
-            // TODO 单位净值而不是累计净值
             if (this.validateAcWorthTrend(1)) {
-                return this.fundInfo.acWorthTrend[0].y
+                return this.fundInfo.acWorthTrend[0]
             }
             return 0.0
-        },
-        dataDate() {
-            if (this.validateAcWorthTrend(1)) {
-                return dateToStr(new Date(this.fundInfo.acWorthTrend[0].x))
-            }
-            return ""
         },
     },
     async asyncData({ params }) {
         return { fundCode: params.id }
+        //#region
         // return axios
         //     .get(`${config.gateway}/api/fund/fundInfo/${params.id}`, {
         //         headers: {"Access-Control-Allow-Origin":"*",}
@@ -145,6 +138,7 @@ export default Vue.extend({
         //         return { fundInfo: { ...data.data } }
         //     })
         //     .catch(console.log)
+        //#endregion
     },
     methods: {
         handleReturn,
@@ -190,24 +184,24 @@ export default Vue.extend({
             let yieldChart = this.$echarts.init(document.getElementById("yield-chart"))
             this.yieldChart = yieldChart
             this.establishmentDay = dayjs()
-            this.days = []
+            this.days = [] // dayjs日期数组
             this.netWorths = []
             this.xs = []
             this.ys = []
             if (this.validateAcWorthTrend(1)) {
-                this.establishmentDay = dayjs(acWorthTrend[0].x)
+                this.establishmentDay = dayjs(this.fundInfo.x[0])
                 this.days.push(this.establishmentDay)
-                let baseNetWorth = acWorthTrend[0].y
+                let baseNetWorth = acWorthTrend[0]
                 this.netWorths.push(baseNetWorth)
                 this.xs.push(this.establishmentDay.format("YYYY-MM-DD"))
                 this.ys.push(0)
                 for (let i = 1; i < acWorthTrend.length; ++i) {
                     let netWorth = acWorthTrend[i]
-                    let day = dayjs(netWorth.x)
+                    let day = dayjs(this.fundInfo.x[i])
                     this.days.push(day)
-                    this.netWorths.push(netWorth.y)
+                    this.netWorths.push(netWorth)
                     this.xs.push(day.format("YYYY-MM-DD"))
-                    this.ys.push(((netWorth.y - baseNetWorth) / baseNetWorth) * 100)
+                    this.ys.push(((netWorth - baseNetWorth) / baseNetWorth) * 100)
                 }
             }
             yieldChart.setOption({

@@ -43,12 +43,23 @@ router.get("/info/:fundCode", async (ctx, next) => {
             let dataCode = response.data
             // TODO 危险操作
             eval(dataCode)
-            Data_ACWorthTrend = Data_ACWorthTrend.map((xy) => {
-                return {
-                    x: xy[0],
-                    y: xy[1],
+            let x = []
+            let netWorthTrend = []
+            let acWorthTrend = []
+            let acWorth = 1 // 复权累计净值
+            let netWorth = 1
+            for (let day of Data_netWorthTrend) {
+                x.push(day.x)
+                // day.equityReturn 可能不准确
+                let equityReturn = day.equityReturn
+                if (day.unitMoney.length == 0) {  // 没有分红的情况下
+                    equityReturn = ((day.y - netWorth) / netWorth * 100).toFixed(4)
                 }
-            })
+                netWorth = day.y.toFixed(4)
+                netWorthTrend.push(netWorth)
+                acWorth = (acWorth * (1 + equityReturn / 100)).toFixed(4)
+                acWorthTrend.push(acWorth)
+            }
             Data_rateInSimilarType = Data_rateInSimilarType.map((item) => {
                 item.total = Number(item.sc)
                 item.sc = undefined
@@ -67,6 +78,7 @@ router.get("/info/:fundCode", async (ctx, next) => {
                 })
             }
             let origin_Data_currentFundManager = Data_currentFundManager
+            // #region
             // [
             //     {
             //         id: "30335060",
@@ -103,6 +115,7 @@ router.get("/info/:fundCode", async (ctx, next) => {
             //         },
             //     },
             // ];
+            // #endregion
             Data_currentFundManager = []
             for (let manager of origin_Data_currentFundManager) {
                 Data_currentFundManager.push({
@@ -120,8 +133,9 @@ router.get("/info/:fundCode", async (ctx, next) => {
                 yieldSixMonths: syl_6y,
                 yieldThreeMonths: syl_3y,
                 yieldOneMonth: syl_1y,
-                // netWorthTrend: Data_netWorthTrend,
-                acWorthTrend: Data_ACWorthTrend,
+                x,
+                netWorthTrend,
+                acWorthTrend,
                 // [{ x: 1357228800000, y: 1.0}, ...]
                 ranksInSimilarType: Data_rateInSimilarType,
                 // [{ x: 1357228800000, y: 303, total: 389 }, ...]

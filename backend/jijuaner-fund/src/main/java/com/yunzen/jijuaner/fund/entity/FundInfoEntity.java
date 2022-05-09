@@ -27,18 +27,21 @@ public class FundInfoEntity implements Serializable {
     private String fundType;
     private Long saveTime;
 
-    private List<AcWorth> acWorthTrend;
+    private List<Long> x; // 时间戳
+    private List<String> netWorthTrend; // 单位累计净值
+    private List<String> acWorthTrend; // 复权累计净值
+
     private List<RankInSimilarType> ranksInSimilarType;
     private List<CurrentManager> currentManagers;
     private List<Scale> scales;
 
-    @Data
-    public static class AcWorth implements Serializable {
-        private static final long serialVersionUID = 1L;
+    // @Data
+    // public static class Worth implements Serializable {
+    //     private static final long serialVersionUID = 1L;
 
-        private Long x;
-        private String y;
-    }
+    //     private Long x;
+    //     private String y;
+    // }
 
     @Data
     public static class RankInSimilarType implements Serializable {
