@@ -53,12 +53,12 @@ router.get("/info/:fundCode", async (ctx, next) => {
                 // day.equityReturn 可能不准确
                 let equityReturn = day.equityReturn
                 if (day.unitMoney.length == 0) {  // 没有分红的情况下
-                    equityReturn = ((day.y - netWorth) / netWorth * 100).toFixed(4)
+                    equityReturn = ((day.y - netWorth) / netWorth * 100)
                 }
-                netWorth = day.y.toFixed(4)
-                netWorthTrend.push(netWorth)
-                acWorth = (acWorth * (1 + equityReturn / 100)).toFixed(4)
-                acWorthTrend.push(acWorth)
+                netWorth = day.y
+                netWorthTrend.push(netWorth.toFixed(4))
+                acWorth = (acWorth * (1 + equityReturn / 100))
+                acWorthTrend.push(acWorth.toFixed(4))
             }
             Data_rateInSimilarType = Data_rateInSimilarType.map((item) => {
                 item.total = Number(item.sc)

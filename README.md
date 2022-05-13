@@ -6,9 +6,6 @@
 docker start nginx mysql redis mongo nacos rabbitmq es
 docker stop nginx mysql redis mongo nacos rabbitmq es
 
-cd ./frontend/jijuaner-app/ && npm run dev
-cd ./backend/jijuaner-jsdata/ && npm run dev
-
 cd A:\program\ding\
 .\ding.exe -config="./ding.cfg" -subdomain="gateway.jijuaner" 50000
 
@@ -16,7 +13,7 @@ cd A:\program\ding\
 
 ## TODO
 
-将金额数据用BigInteger保存, 并指明它的位数, 修改数据库的类型定义
+<!-- 将金额数据用BigInteger保存, 并指明它的位数, 修改数据库的类型定义 -->
 使用 vuex 保存一些通用的信息
 
 支付功能:
@@ -26,7 +23,6 @@ cd A:\program\ding\
 自选功能：
 
 详情页功能：
-!!使用的应该是复权累积净值而不是累计净值
 设置时间段
 设置参考指数（数据从韭圈获得）
 货币基金没有累计净值
@@ -67,7 +63,6 @@ cd A:\program\ding\
 - RabbitMQ
 - Koa2
 - Flask
-<!-- - Backtrader (Python 量化) -->
 
 ### 微服务
 
@@ -439,4 +434,6 @@ CREATE TABLE alipay_order(
 
 #### 量化
 
-敬请期待
+使用自己写的回测框架:
+
+![](./img/backtest.jpg)

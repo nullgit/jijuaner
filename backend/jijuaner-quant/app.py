@@ -1,15 +1,20 @@
-import argparse
-import asyncio
-
-from config import Config
-from databus import db, mongo, process_pool, redis, thread_pool
-from flask import Flask
-from gevent import pywsgi
+from bp.index import index_bp
+from bp.bond import bond_bp
 from utils.nacos_utils import send_heartbeat, send_request_to_nacos_instance
+from gevent import pywsgi
+from flask import Flask
+from databus import db, mongo, process_pool, redis, thread_pool
+from config import Config
+import asyncio
+import argparse
+import os
+
+os.chdir('/home/ubuntu/project/jijuaner/backend/jijuaner-quant/')
+
 
 parser = argparse.ArgumentParser(description='jijuaner-quant 鸡圈儿量化模块')
 parser.add_argument('--debug', type=bool, default=False,
-                metavar='DEBUG', help='flask是否开启debug模式')
+                    metavar='DEBUG', help='flask是否开启debug模式')
 args = parser.parse_args()
 
 app = Flask(__name__)
@@ -19,8 +24,6 @@ redis.init_app(app)
 db.init_app(app)
 mongo.init_app(app)
 
-from bp.bond import bond_bp
-from bp.index import index_bp
 
 app.register_blueprint(index_bp)
 app.register_blueprint(bond_bp)
@@ -34,9 +37,11 @@ def index():
 @app.route('/test')
 def test() -> str:
     # return asyncio.run(send_request_to_nacos_instance('fund', '/fund/fundInfo/simple/110011'))
-    from quant.risk_premium import get_fig
-    get_fig('沪深300', '中国国债收益率10年')
+    from quant.risk_premium import back_test_risk_premium_strategy, get_fig
+
+    # get_fig('沪深300', '中国国债收益率10年')
     # get_fig('中证800', '中国国债收益率10年')
+    back_test_risk_premium_strategy('110011')
     return 'ok'
 
 
