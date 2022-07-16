@@ -3,7 +3,7 @@
 tmp
 log
 tools
-jijuaner-quant/output/**
+backend/jijuaner-quant/output
 
 HELP.md
 target/
