@@ -8,6 +8,13 @@ docker stop nginx mysql redis mongo nacos rabbitmq es
 
 cd A:\program\ding\
 .\ding.exe -config="./ding.cfg" -subdomain="gateway.jijuaner" 50000
+或
+cd /home/ubuntu/project/jijuaner/tools/
+./ding -config="./ding.cfg" -subdomain="gateway.jijuaner" 50000
+
+nginx 配置问题: 服务器和客户端的hosts是否配置 
+127.0.0.1 app.jijuaner.vaiwan.com
+127.0.0.1 gateway.jijuaner.vaiwan.com
 
 ``` -->
 
@@ -36,7 +43,8 @@ cd A:\program\ding\
 
 指数估值曲线（数据从韭圈获得）
 投资箴言
-模拟投资 + 量化
+!!模拟投资
+!!各种量化策略: 估值定投, 定投, 均线定投, 写fund_gym环境用于强化学习策略, LSTM/GRU策略
 (文章发表)
 系统消息
 <!-- 恐贪指数（数据从韭圈获得） -->

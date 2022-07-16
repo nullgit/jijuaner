@@ -11,6 +11,12 @@ public class UserWebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new UserInterceptor()) // 注册 User 拦截器
-                .addPathPatterns("/**");
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/user/userList/hello",
+                        "/user/userList/getUserInfos",
+                        "/user/userList/sendCode",
+                        "/user/userList/getOssPolicy"
+                );
     }
 }

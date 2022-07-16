@@ -56,6 +56,17 @@
             <artifactId>spring-cloud-starter-alicloud-oss</artifactId>
             <version>2.2.0.RELEASE</version>
         </dependency>
-    </dependencies> 
+    </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.yunzen.jijuaner.user.User20000</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

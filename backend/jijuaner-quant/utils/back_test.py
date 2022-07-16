@@ -1,18 +1,14 @@
 from datetime import datetime, timedelta
 from enum import Enum, auto
-from queue import Queue
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 import requests
-from pandas import DataFrame, Series
-from pyecharts import options as opts
-from pyecharts.charts import Line, Page
-from pyecharts.globals import ThemeType
-from pyecharts.options import TooltipOpts
+from pandas import DataFrame
 from sortedcollections import SortedList
-from utils.utils import get_cur_or_last_date_row, get_cur_or_next_date_row
+from utils.const import AC_WORTH, DATE, NET_WORTH
+from utils.utils import get_cur_or_next_date_row
 
 
 class OrderShare:
@@ -51,11 +47,6 @@ class SellRate:
         self.rate = rate
 
 
-AC_WORTH = 'ac_worth'
-NET_WORTH = 'net_worth'
-DATE = 'date'
-
-
 class BackTest:
     def __init__(self, fund_code: str, debug: bool = False) -> None:
         # TODO 通过nacos实例获取数据
@@ -71,11 +62,7 @@ class BackTest:
             df.index = df[DATE]
         self.info: DataFrame = df
         self.total_share: float = 0.0
-        self.cash: float
-        self.shares: SortedList[OrderShare] = SortedList(
-            key=lambda x: x.date)  # 已经成功的买入份额, 按买入的时间顺序排队
-        self.queue: SortedList[Message] = SortedList(
-            key=lambda x: x.date)  # 消息队列
+        self.cash: float = 0.0
         self.sell_rates: List[SellRate] = [
             SellRate(timedelta(7), 1.50 * 0.01),
             SellRate(timedelta(30), 0.50 * 0.01),
@@ -87,17 +74,40 @@ class BackTest:
             # TODO 大于500万后固定费用
         ]
         self.min_buy_amount: float = 10.0
-        self.indexes: Dict = {}
-        self.records: Dict = {
-            'cash': [],
-            'value': [],
-        }
         self.T = 1
+        self.reset(debug=debug, cash=0.0)
         self.now: datetime
         self.now_row: pd.core.series.Series
         self.start_time: datetime
         self.stop_time: datetime
-        self.debug = debug
+
+    def _reset_shares(self) -> None:
+        self.shares: SortedList[OrderShare] = SortedList(
+            key=lambda x: x.date)  # 已经成功的买入份额, 按买入的时间顺序排队
+
+    def _reset_queue(self) -> None:
+        self.queue: SortedList[Message] = SortedList(
+            key=lambda x: x.date)  # 消息队列
+
+    def _reset_indexes(self) -> None:
+        self.indexes: Dict = {}
+
+    def _reset_record(self) -> None:
+        self.records: Dict = {'cash': [], 'value': []}
+
+    def reset(self, start_time: datetime = None, stop_time: datetime = None, debug: bool = None, cash: float = 0.0):
+        '''重置除了fund_code外的数据'''
+        if start_time is not None:
+            self.start_time = start_time
+        if stop_time is not None:
+            self.stop_time = stop_time
+        if debug is not None:
+            self.debug = debug
+        self.cash = cash
+        self._reset_shares()
+        self._reset_queue()
+        self._reset_indexes()
+        self._reset_record()
 
     def _log(self, msg: str):
         if self.debug:
@@ -167,6 +177,9 @@ class BackTest:
             elif msg.type == MessageType.SELL:
                 self._handle_sell_message(msg)
 
+    def compute_value(self) -> float:
+        return self.total_share * self.now_row[AC_WORTH] + self.cash
+
     def buy(self, amount: float = 0.0):
         buy_msg = Message(
             self.now + timedelta(days=self.T), MessageType.BUY)
@@ -179,32 +192,6 @@ class BackTest:
         sell_msg.share = share
         self.queue.add(sell_msg)
         self._log(f'打算卖出{share}份')
-
-    # TODO 将策略与回测框架解耦
-    def strategy(self) -> None:
-        # 当风险溢价位于25%区间时, 加仓; 高于25%区间时, 减仓
-        if self.indexes['now'] > self.indexes['75%']:
-            self.sell(10000)
-        elif self.indexes['now'] < self.indexes['25%']:
-            self.buy(10000)
-
-    def before_step(self) -> None:
-        risk: Series = self.indexes['risk']
-        prevs = risk.truncate(after=self.now)
-        self.indexes['25%'] = prevs.quantile(0.25)
-        self.indexes['75%'] = prevs.quantile(0.75)
-        self.indexes['now'] = prevs.iloc[-1]
-
-    def after_step(self) -> None:
-        self.records['date'].append(self.now)
-        self.records['25%'].append(self.indexes['25%'])
-        self.records['75%'].append(self.indexes['75%'])
-        self.records['now'].append(self.indexes['now'])
-        self.records['cash'].append(self.cash)
-        self.records['value'].append(self.compute_value())
-
-    def compute_value(self) -> float:
-        return self.total_share * self.now_row[AC_WORTH] + self.cash
 
     def execute(self) -> None:
         self.now = self.start_time
@@ -227,26 +214,21 @@ class BackTest:
         self.after_execute()
 
     def before_execute(self) -> None:
-        self.records['date'] = []
-        self.records['25%'] = []
-        self.records['75%'] = []
-        self.records['now'] = []
+        '''执行前的准备工作'''
+        pass
 
     def after_execute(self) -> None:
-        page = Page('回测结果')
-        opt = opts.InitOpts(theme=ThemeType.LIGHT, bg_color='white')
-        tooltip_opt = TooltipOpts(trigger='axis')
-        index_line = Line(opt).set_global_opts(tooltip_opts=tooltip_opt) \
-            .add_xaxis(self.records['date']) \
-            .add_yaxis("25%", self.records['25%']) \
-            .add_yaxis('75%', self.records['75%']) \
-            .add_yaxis('now', self.records['now'])
-        fund_line = Line(opt).set_global_opts(tooltip_opts=tooltip_opt) \
-            .add_xaxis(self.info[DATE].truncate(before=self.start_time).truncate(after=self.stop_time).to_list()) \
-            .add_yaxis('ac_worth', self.info[AC_WORTH].truncate(before=self.start_time).truncate(after=self.stop_time).to_list())
-        record_line = Line(opt).set_global_opts(tooltip_opts=tooltip_opt) \
-            .add_xaxis(self.records['date']) \
-            .add_yaxis('cash', self.records['cash']) \
-            .add_yaxis('value', self.records['value'])
-        page.add(fund_line).add(index_line).add(record_line)
-        page.render('./output/回测结果.html')
+        '''执行后的收尾工作'''
+        pass
+
+    def strategy(self) -> None:
+        '''策略'''
+        pass
+
+    def before_step(self) -> None:
+        '''每步执行后的收尾工作'''
+        pass
+
+    def after_step(self) -> None:
+        '''每步执行前的准备工作'''
+        pass

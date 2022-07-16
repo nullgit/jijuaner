@@ -1,6 +1,9 @@
 **/node_modules
-**/tmp
 **/__pycache__
+tmp
+log
+tools
+jijuaner-quant/output/**
 
 HELP.md
 target/

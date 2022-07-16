@@ -10,3 +10,4 @@ nacos-sdk-python
 backtrader
 backtrader_plotting
 jsonpickle
+pyecharts

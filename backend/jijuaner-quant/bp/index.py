@@ -124,6 +124,9 @@ class IndexValueHistFunddbService:
                 # 使用原来的数据
                 data = IndexValueHistFunddb()
                 data.__dict__.update(d)
+            # TODO 将原来的数据删除
+            # else:
+            #     self.mongo.delete_one({'_id', d['_id']})
         else:
             data = IndexValueHistFunddb()
             data.__dict__.update(d)

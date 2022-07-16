@@ -7,7 +7,6 @@
         <relativePath>../jijuaner-parent/pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-
     <artifactId>jijuaner-search</artifactId>
 
     <dependencies>
@@ -30,11 +29,23 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        
+
         <dependency>
 			<groupId>org.elasticsearch.client</groupId>
 			<artifactId>elasticsearch-rest-high-level-client</artifactId>
 			<version>7.14.1</version>
 		</dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.yunzen.jijuaner.search.Search30000</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
