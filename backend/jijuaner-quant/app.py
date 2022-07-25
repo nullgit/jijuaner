@@ -47,9 +47,11 @@ def test() -> str:
     # # get_fig('中证800', '中国国债收益率10年')
     # back_test_risk_premium_strategy('110011')
 
-    from quant.average import back_test_average_strategy
-    back_test_average_strategy('110011')
-    return 'ok3'
+    # from quant.average import back_test_average_strategy
+    # back_test_average_strategy('110011')
+    from quant.dollar_cost_averaging import back_test_dollar_cost_averaging_strategy
+    back_test_dollar_cost_averaging_strategy('110011')
+    return 'ok4'
 
 
 if __name__ == '__main__':

@@ -18,6 +18,7 @@ from utils.back_test import BackTest
 from utils.const import AC_WORTH, DATE
 from utils.utils import decode_if_not_none
 
+# 让jsonpickle能处理pandas数据
 jsonpickle_pd.register_handlers()
 
 KEY = 'jijuaner:risk_premium'
@@ -102,7 +103,6 @@ class RiskPremiumBackTest(BackTest):
             .add_yaxis('value', self.records['value'])
         page.add(fund_line).add(index_line).add(record_line)
         page.render('./output/风险溢价策略回测结果.html')
-
 
     def strategy(self) -> None:
         # 当风险溢价位于25%区间时, 加仓; 高于25%区间时, 减仓
